@@ -10,6 +10,7 @@
 // Sources: CIQUAL/ANSES, USDA FoodData Central
 // ============================================================================
 const DEFAULT_INGREDIENTS = [
+  { name: "Fève de tonka", category: "Arôme", water: 0.05, fat: 0.20, protein: 0.05, carbs: 0.40, sweetness: 0.0, kcal: 300, fiber: 0.15, notes: "Arôme puissant, 1/2 fève râpée" },
   { name: "Pêche (fraîche)",        category: "Fruit",      water: 0.89, fat: 0.003, protein: 0.01,  carbs: 0.09, sweetness: 0.50, kcal: 39,  fiber: 0.015, notes: "Riche en eau, bien mûre pour plus de sucre" },
   { name: "Abricot (frais)",        category: "Fruit",      water: 0.86, fat: 0.001, protein: 0.015, carbs: 0.11, sweetness: 0.60, kcal: 48,  fiber: 0.02,  notes: "Plus sucré que la pêche" },
   { name: "Fraise (fraîche)",       category: "Fruit",      water: 0.91, fat: 0.003, protein: 0.007, carbs: 0.06, sweetness: 0.35, kcal: 32,  fiber: 0.02,  notes: "Très riche en eau, réduire le liquide ajouté" },
