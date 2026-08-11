@@ -235,13 +235,13 @@ function evaluateFruit(fruitPct) {
   return { text: "Très élevé — profil sorbet", level: 'warn' };
 }
 
-function recommendMode(dairyPct, fatPct) {
+function recommendMode(dairyPct, fatPct, sugarPct) {
   if (dairyPct < 0.10) return 'SORBET';
   if (fatPct < 0.08) return 'LITE ICE CREAM';
+  if (fatPct <= 0.12 && sugarPct >= 0.18) return 'GELATO';
   if (fatPct < 0.18) return 'ICE CREAM';
   return 'ICE CREAM (riche)';
 }
-
 // ============================================================================
 // FORMATAGE
 // ============================================================================
@@ -362,7 +362,7 @@ function renderEvaluations(totals) {
     </div>
   `).join('');
 
-  const mode = recommendMode(totals.dairyPct, totals.fatPct);
+  const mode = recommendMode(totals.dairyPct, totals.fatPct, totals.sugarPct);
   document.getElementById('recommended-mode').textContent = mode;
 }
 
