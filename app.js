@@ -693,20 +693,21 @@ function setupTheme() {
 }
 
 // ============================================================================
-// ACTIONS BOUTONS (SÉCURISÉES CONTRE LES ÉLÉMENTS ABSENTS)
+// ACTIONS BOUTONS (VERSION SÉCURISÉE SANS CRASH)
 // ============================================================================
 function setupActions() {
-  // Add ingredient row
-  const btnAddIng = document.getElementById('add-ingredient');
-  if (btnAddIng) {
-    btnAddIng.addEventListener('click', () => {
+  // 1. Bouton Ajouter Ingrédient (Simulateur)
+  const btnAddIngredient = document.getElementById('add-ingredient');
+  if (btnAddIngredient) {
+    btnAddIngredient.addEventListener('click', () => {
+      // Correction importante : on prend le nom du premier ingrédient disponible
       recipeLines.push({ name: ingredientsDB[0].name, grams: 0 });
       saveToStorage(STORAGE_KEYS.recipe, recipeLines);
       renderSimulator();
     });
   }
 
-  // Mode select save
+  // 2. Sauvegarde du choix de mode manuel
   const modeSelect = document.getElementById('mode-select-input');
   if (modeSelect) {
     const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
@@ -716,7 +717,7 @@ function setupActions() {
     });
   }
 
-  // Journal: add entry (Sécurisé)
+  // 3. Bouton Nouvel Essai (Journal)
   const btnAddJournal = document.getElementById('add-journal');
   if (btnAddJournal) {
     btnAddJournal.addEventListener('click', () => {
@@ -731,7 +732,7 @@ function setupActions() {
     });
   }
 
-  // Journal: export (Sécurisé)
+  // 4. Exporter le Journal (JSON)
   const btnExportJournal = document.getElementById('export-journal');
   if (btnExportJournal) {
     btnExportJournal.addEventListener('click', () => {
@@ -745,7 +746,7 @@ function setupActions() {
     });
   }
 
-  // Journal: import (Sécurisé)
+  // 5. Importer un Journal (JSON)
   const btnImportJournal = document.getElementById('import-journal');
   if (btnImportJournal) {
     btnImportJournal.addEventListener('click', () => {
@@ -771,7 +772,7 @@ function setupActions() {
     });
   }
 
-  // Journal: clear (Sécurisé)
+  // 6. Effacer le Journal
   const btnClearJournal = document.getElementById('clear-journal');
   if (btnClearJournal) {
     btnClearJournal.addEventListener('click', () => {
@@ -783,35 +784,10 @@ function setupActions() {
     });
   }
 
-  // Ingredients DB: add row (Sécurisé)
-  const btnAddIngDb = document.getElementById('add-ingredient-db');
-  if (btnAddIngDb) {
-    btnAddIngDb.addEventListener('click', () => {
-      ingredientsDB.push({ name: "Nouvel ingrédient", category: "Arôme", water: 0.5, fat: 0, protein: 0, carbs: 0, sweetness: 0, kcal: 0, fiber: 0, notes: "" });
-      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-      renderIngredientsDB();
-      renderSimulator();
-    });
-  }
-
-  // Ingredients DB: delete row (Sécurisé)
-  const rowIngDb = document.getElementById('ingredients-db-rows');
-  if (rowIngDb) {
-    rowIngDb.addEventListener('click', (e) => {
-      if (e.target.classList.contains('row-delete') && e.target.dataset.action === 'idelete') {
-        const idx = parseInt(e.target.dataset.iidx);
-        ingredientsDB.splice(idx, 1);
-        saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-        renderIngredientsDB();
-        renderSimulator();
-      }
-    });
-  }
-
-  // Ingredients: reset (Sécurisé)
-  const btnResetIng = document.getElementById('reset-ingredients');
-  if (btnResetIng) {
-    btnResetIng.addEventListener('click', () => {
+  // 7. Réinitialiser la Base d'Ingrédients (Onglet Ingrédients)
+  const btnResetIngredients = document.getElementById('reset-ingredients');
+  if (btnResetIngredients) {
+    btnResetIngredients.addEventListener('click', () => {
       if (confirm('Réinitialiser la base d\'ingrédients aux valeurs par défaut ? Vos modifications seront perdues.')) {
         ingredientsDB = JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS));
         saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
