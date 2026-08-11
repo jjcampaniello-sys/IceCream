@@ -320,46 +320,44 @@ function fmtG(n) { return fmt1(n) + ' g'; }
 // ============================================================================
 function renderIngredientRows() {
   const tbody = document.getElementById('ingredient-rows');
-  if (!tbody) return;
+  if (!tbody) return; // Sécurité anti-crash
   tbody.innerHTML = '';
+
+  // Sécurité : Si les bases de données ne sont pas prêtes, on utilise le catalogue par défaut
+  const db = (ingredientsDB && ingredientsDB.length > 0) ? ingredientsDB : (catalogueIngredients || DEFAULT_INGREDIENTS);
 
   recipeLines.forEach((line, idx) => {
     const tr = document.createElement('tr');
     const ing = findIngredient(line.name);
     const c = calcIngredientLine(line);
 
-    // Menu déroulant des ingrédients
-    const nameOptions = ingredientsDB.map(i =>
+    // Version sécurisée du dropdown
+    const nameOptions = db.map(i =>
       `<option value="${i.name}" ${i.name === line.name ? 'selected' : ''}>${i.name}</option>`
     ).join('');
 
-    // Rendu strict des 9 colonnes attendues par votre fichier HTML d'origine
     tr.innerHTML = `
       <td>
         <select class="select-ingredient" data-idx="${idx}" data-field="name">${nameOptions}</select>
       </td>
-      <td class="num">
-        <input type="number" class="input-poids" min="0" step="5" value="${line.grams}" data-idx="${idx}" data-field="grams">
-      </td>
+      <td class="num"><input type="number" class="input-poids" min="0" step="1" value="${line.grams}" data-idx="${idx}" data-field="grams"></td>
       <td class="num val-water">${fmt1(c.water)}g</td>
       <td class="num val-fat">${fmt1(c.fat)}g</td>
       <td class="num val-sugar">${fmt1(c.sugarEquiv)}g</td>
       <td class="num val-solids">${fmt1(c.solids)}g</td>
       <td class="num val-kcal">${fmt0(c.kcal)} kcal</td>
-      <td class="val-category">${ing ? ing.category : '—'}</td>
+      <td class="val-category">${ing ? ing.category : ''}</td>
       <td><button class="row-delete" data-idx="${idx}" data-action="delete" aria-label="Supprimer">✕</button></td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Attach listeners : 'input' permet de calculer pendant la saisie sans bloquer le focus
-  tbody.querySelectorAll('input').forEach(el => {
+  // Attach listeners
+  tbody.querySelectorAll('select, input').forEach(el => {
     el.addEventListener('input', onIngredientChange);
-  });
-  tbody.querySelectorAll('select').forEach(el => {
     el.addEventListener('change', onIngredientChange);
   });
-
+  
   tbody.querySelectorAll('[data-action="delete"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
@@ -369,6 +367,7 @@ function renderIngredientRows() {
     });
   });
 }
+
 
 function onIngredientChange(e) {
   const idx = parseInt(e.target.dataset.idx);
@@ -708,11 +707,15 @@ function setupTheme() {
 // ============================================================================
 function setupActions() {
   // 1. Bouton Ajouter Ingrédient (Simulateur)
+    // Add ingredient row (Version corrigée)
   const btnAddIngredient = document.getElementById('add-ingredient');
   if (btnAddIngredient) {
     btnAddIngredient.addEventListener('click', () => {
-      // Correction importante : on prend le nom du premier ingrédient disponible
-      recipeLines.push({ name: ingredientsDB[0].name, grams: 0 });
+      // Sécurité : On s'assure d'avoir une liste d'ingrédients valide pour attribuer un nom par défaut
+      const db = (ingredientsDB && ingredientsDB.length > 0) ? ingredientsDB : DEFAULT_INGREDIENTS;
+      const defaultName = db[0] ? db[0].name : "Sucre blanc";
+      
+      recipeLines.push({ name: defaultName, grams: 0 });
       saveToStorage(STORAGE_KEYS.recipe, recipeLines);
       renderSimulator();
     });
