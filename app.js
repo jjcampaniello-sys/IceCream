@@ -612,106 +612,50 @@ function setupTheme() {
 // ============================================================================
 // ACTIONS BOUTONS
 // ============================================================================
+// ============================================================================
+// ACTIONS BOUTONS
+// ============================================================================
 function setupActions() {
   // Add ingredient row
-  document.getElementById('add-ingredient').addEventListener('click', () => {
-    recipeLines.push({ name: ingredientsDB[0].name, grams: 0 });
-    saveToStorage(STORAGE_KEYS.recipe, recipeLines);
-    renderSimulator();
-  });
+  const addIngBtn = document.getElementById('add-ingredient');
+  if (addIngBtn) {
+    addIngBtn.addEventListener('click', () => {
+      recipeLines.push({ name: ingredientsDB[0].name, grams: 0 });
+      saveToStorage(STORAGE_KEYS.recipe, recipeLines);
+      renderSimulator();
+    });
+  }
 
   // Mode select save
   const modeSelect = document.getElementById('mode-select-input');
-  const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
-  modeSelect.value = savedMode;
-  modeSelect.addEventListener('change', () => {
-    saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
-  });
+  if (modeSelect) {
+    const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
+    modeSelect.value = savedMode;
+    modeSelect.addEventListener('change', () => {
+      saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
+    });
+  }
 
   // Journal: add entry
-  document.getElementById('add-journal').addEventListener('click', () => {
-    const today = new Date().toISOString().split('T')[0];
-    journal.push({
-      date: today, recipe: '', fruit: 0, fb: 0, cream: 0, sugar: 0, honey: 0, agave: 0,
-      mode: 'Lite Ice Cream', spins: 1, liquid: '', scoreTexture: '', scoreSweet: '', scoreIcy: '',
-      notes: '', adjustment: ''
-    });
-    saveToStorage(STORAGE_KEYS.journal, journal);
-    renderJournal();
-  });
-
-  // Journal: export
-  document.getElementById('export-journal').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(journal, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'creami-journal-' + new Date().toISOString().split('T')[0] + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  // Journal: import
-  document.getElementById('import-journal').addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          journal = JSON.parse(ev.target.result);
-          saveToStorage(STORAGE_KEYS.journal, journal);
-          renderJournal();
-        } catch (err) {
-          alert('Fichier JSON invalide');
-        }
-      };
-      reader.readAsText(file);
-    });
-    input.click();
-  });
-
-  // Journal: clear
-  document.getElementById('clear-journal').addEventListener('click', () => {
-    if (confirm('Effacer tous les essais du journal ?')) {
-      journal = [];
+  const addJournalBtn = document.getElementById('add-journal');
+  if (addJournalBtn) {
+    addJournalBtn.addEventListener('click', () => {
+      const today = new Date().toISOString().split('T')[0];
+      journal.push({
+        date: today, recipe: '', fruit: 0, fb: 0, cream: 0, sugar: 0, honey: 0, agave: 0,
+        mode: 'Lite Ice Cream', spins: 1, liquid: '', scoreTexture: '', scoreSweet: '', scoreIcy: '',
+        notes: '', adjustment: ''
+      });
       saveToStorage(STORAGE_KEYS.journal, journal);
       renderJournal();
-    }
-  });
+    });
+  }
 
-  // Ingredients DB: add row
-  document.getElementById('add-ingredient-db').addEventListener('click', () => {
-    ingredientsDB.push({ name: "Nouvel ingrédient", category: "Arôme", water: 0.5, fat: 0, protein: 0, carbs: 0, sweetness: 0, kcal: 0, fiber: 0, notes: "" });
-    saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-    renderIngredientsDB();
-    renderSimulator();
-  });
-
-  // Ingredients DB: delete row (event delegation)
-  document.getElementById('ingredients-db-rows').addEventListener('click', (e) => {
-    if (e.target.classList.contains('row-delete') && e.target.dataset.action === 'idelete') {
-      const idx = parseInt(e.target.dataset.iidx);
-      ingredientsDB.splice(idx, 1);
-      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-      renderIngredientsDB();
-      renderSimulator();
-    }
-  });
-
-  // Ingredients: reset
-  document.getElementById('reset-ingredients').addEventListener('click', () => {
-    if (confirm('Réinitialiser la base d\'ingrédients aux valeurs par défaut ? Vos modifications seront perdues.')) {
-      ingredientsDB = JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS));
-      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-      renderIngredientsDB();
-      renderSimulator();
-    }
-  });
-}
+  // Journal: export
+  const exportBtn = document.getElementById('export-journal');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(journal, null, 2)
 
 // ============================================================================
 // INITIALISATION
