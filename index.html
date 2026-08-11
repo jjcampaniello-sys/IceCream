@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulateur de Recettes Ninja Creami</title>
   <meta name="description" content="Outil de simulation et calcul de ratios pour recettes Ninja Creami: fruits, produits laitiers, agents sucrants.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍦</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍦</text></svg>">
+  <link rel="preconnect" href="https://googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -35,8 +35,6 @@
       <button class="tab active" role="tab" data-tab="simulator" aria-selected="true">Simulateur</button>
       <button class="tab" role="tab" data-tab="texture" aria-selected="false">Guide texture</button>
       <button class="tab" role="tab" data-tab="modes" aria-selected="false">Modes</button>
-      <button class="tab" role="tab" data-tab="journal" aria-selected="false">Journal</button>
-      <button class="tab" role="tab" data-tab="ingredients" aria-selected="false">Ingrédients</button>
     </nav>
   </header>
 
@@ -56,6 +54,7 @@
                 <th class="num">MG</th>
                 <th class="num">Sucre éq. (g)</th>
                 <th class="num">Extrait sec (g)</th>
+                <th class="num">Calories (kcal)</th>
                 <th>Catégorie</th>
                 <th></th>
               </tr>
@@ -69,6 +68,7 @@
                 <td class="num" id="total-fat">—</td>
                 <td class="num" id="total-sugar">—</td>
                 <td class="num" id="total-solids">—</td>
+                <td class="num" id="total-kcal">—</td>
                 <td></td>
                 <td></td>
               </tr>
@@ -123,11 +123,6 @@
           </table>
         </div>
       </section>
-
-      <section class="card">
-        <h2 class="card-title">Conseils pro — équilibre eau / sucre / MG / extrait sec</h2>
-        <ul class="tips-list" id="tips-list"></ul>
-      </section>
     </div>
   </main>
 
@@ -150,101 +145,10 @@
           </table>
         </div>
       </section>
-
-      <section class="card">
-        <h2 class="card-title">Procédure standard — du mixage au service</h2>
-        <ol class="steps-list" id="steps-list"></ol>
-      </section>
     </div>
   </main>
-
-  <!-- Tab: Journal -->
-  <main class="tab-content" id="tab-journal" role="tabpanel">
-    <div class="container">
-      <section class="card">
-        <div class="card-header-row">
-          <h2 class="card-title">Journal des essais & re-spins</h2>
-          <div class="journal-actions">
-            <button class="btn btn-sm" id="export-journal">Exporter JSON</button>
-            <button class="btn btn-sm" id="import-journal">Importer JSON</button>
-            <button class="btn btn-sm btn-danger" id="clear-journal">Effacer</button>
-          </div>
-        </div>
-        <p class="card-hint">Scores de 1 (mauvais) à 5 (excellent). Données sauvegardées dans le navigateur.</p>
-        <div class="table-wrap">
-          <table class="data-table journal-table" id="journal-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Recette</th>
-                <th class="num">Fruit</th>
-                <th class="num">From. blanc</th>
-                <th class="num">Crème</th>
-                <th class="num">Sucre</th>
-                <th class="num">Miel</th>
-                <th class="num">Agave</th>
-                <th>Mode</th>
-                <th class="num">Spins</th>
-                <th>Liquide ajouté</th>
-                <th class="num">Texture</th>
-                <th class="num">Sucré</th>
-                <th class="num">Glace</th>
-                <th>Notes</th>
-                <th>Ajustement</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="journal-rows"></tbody>
-          </table>
-        </div>
-        <button class="btn btn-sm" id="add-journal">+ Nouvel essai</button>
-      </section>
-
-      <section class="card">
-        <h2 class="card-title">Statistiques</h2>
-        <div class="stats-grid" id="journal-stats"></div>
-      </section>
-    </div>
-  </main>
-
-  <!-- Tab: Ingrédients -->
-  <main class="tab-content" id="tab-ingredients" role="tabpanel">
-    <div class="container">
-      <section class="card">
-        <div class="card-header-row">
-          <h2 class="card-title">Base de données des ingrédients</h2>
-          <div class="journal-actions">
-            <button class="btn btn-sm" id="reset-ingredients">Réinitialiser</button>
-          </div>
-        </div>
-        <p class="card-hint">Valeurs nutritionnelles de référence, modifiables. Sources: CIQUAL/ANSES, USDA FoodData Central.</p>
-        <div class="table-wrap">
-          <table class="data-table" id="ingredients-db-table">
-            <thead>
-              <tr>
-                <th>Ingrédient</th>
-                <th>Catégorie</th>
-                <th class="num">Eau</th>
-                <th class="num">MG</th>
-                <th class="num">Protéines</th>
-                <th class="num">Glucides</th>
-                <th class="num">Pouvoir sucrant</th>
-                <th class="num">Kcal/100g</th>
-                <th class="num">Fibres</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody id="ingredients-db-rows"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  </main>
-
-  <footer class="app-footer">
-    <p>Simulateur Ninja Creami — <a href="https://github.com" target="_blank" rel="noopener">Code source sur GitHub</a></p>
-  </footer>
 
   <script src="app.js"></script>
 </body>
 </html>
+
