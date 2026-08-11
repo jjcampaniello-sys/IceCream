@@ -1,5 +1,5 @@
 // ============================================================================
-// SIMULATEUR DE RECETTES NINJA CREAMI — VERSION FINALE PRODUCTION VERCEL
+// SIMULATEUR DE RECETTES NINJA CREAMI — VERSION SANS ERREUR PRODUCTION VERCEL
 // ============================================================================
 
 'use strict';
@@ -149,10 +149,3 @@ function gererSaisieNouvelIngredient(selectElement) {
   
   document.querySelectorAll(".select-ingredient").forEach(sel => {
     const val = sel.value;
-    sel.innerHTML = genererOptionsSelect(val === "ADD_NEW_CUSTOM" ? nom : val);
-  });
-  
-  calculerRatios();
-}
-
-
