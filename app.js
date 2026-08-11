@@ -710,6 +710,19 @@ function setupActions() {
     });
   }
 
+// Ingredients DB: add new empty row
+  const addIngDbBtn = document.getElementById('add-ingredient-db');
+  if (addIngDbBtn) {
+    addIngDbBtn.addEventListener('click', () => {
+      ingredientsDB.push({
+        name: '', category: '', water: 0, fat: 0, protein: 0,
+        carbs: 0, sweetness: 0, kcal: 0, fiber: 0, notes: ''
+      });
+      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
+      renderIngredientsDB();
+    });
+  }
+
   // Ingredients DB: reset to defaults
   const resetIngBtn = document.getElementById('reset-ingredients');
   if (resetIngBtn) {
@@ -717,24 +730,11 @@ function setupActions() {
       if (confirm("Réinitialiser la base d'ingrédients aux valeurs par défaut ?")) {
         ingredientsDB = JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS));
         saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-        // Ingredients DB: add new empty row
-const addIngDbBtn = document.getElementById('add-ingredient-db');
-if (addIngDbBtn) {
-  addIngDbBtn.addEventListener('click', () => {
-    ingredientsDB.push({
-      name: '', category: '', water: 0, fat: 0, protein: 0,
-      carbs: 0, sweetness: 0, kcal: 0, fiber: 0, notes: ''
-    });
-    saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-    renderIngredientsDB();
-  });
-}
         renderIngredientsDB();
         renderSimulator();
       }
     });
   }
-}
 
 // ============================================================================
 // INITIALISATION
