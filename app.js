@@ -557,17 +557,14 @@ function renderIngredientsDB() {
 // ============================================================================
 // NAVIGATION PAR ONGLETS
 // ============================================================================
-// ============================================================================
-// NAVIGATION PAR ONGLETS
-// ============================================================================
 function setupTabs() {
   const tabs = document.querySelectorAll('.tab');
   const panels = document.querySelectorAll('.tab-content');
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      const target = tab.dataset.tab; // ex: "simulator", "texture", "modes", ...
-      const targetPanelId = 'tab-' + target; // ex: "tab-simulator"
+      const target = tab.dataset.tab; // "simulator", "texture", "modes", ...
+      const targetPanelId = 'tab-' + target; // "tab-simulator", "tab-texture", ...
 
       tabs.forEach(t => {
         t.classList.remove('active');
@@ -720,32 +717,54 @@ function setupActions() {
 // INITIALISATION
 // ============================================================================
 function init() {
-  // Load data
-  ingredientsDB = loadFromStorage(STORAGE_KEYS.ingredients, JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS)));
-  recipeLines = loadFromStorage(STORAGE_KEYS.recipe, [
-    { name: "Pêche (fraîche)", grams: 250 },
-    { name: "Fromage blanc 40%", grams: 100 },
-    { name: "Crème 30%", grams: 50 },
-    { name: "Sucre blanc", grams: 40 },
-    { name: "Miel", grams: 0 },
-    { name: "Sirop d'agave", grams: 0 },
-    { name: "Lait entier", grams: 0 },
-  ]);
-  journal = loadFromStorage(STORAGE_KEYS.journal, [
-    { date: '2026-08-04', recipe: 'Pêche-fromage blanc', fruit: 250, fb: 100, cream: 50, sugar: 40, honey: 0, agave: 0, mode: 'Lite Ice Cream', spins: 2, liquid: '1 c.s. lait', scoreTexture: 4, scoreSweet: 4, scoreIcy: 3, notes: 'Crémeux, légèrement poudreux au 1er spin. Re-spin + lait = parfait.', adjustment: 'Réduire sucre à 35g, ajouter xanthane' }
-  ]);
+  try {
+    // Load data
+    ingredientsDB = loadFromStorage(STORAGE_KEYS.ingredients, JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS)));
+    recipeLines = loadFromStorage(STORAGE_KEYS.recipe, [
+      { name: "Pêche (fraîche)", grams: 250 },
+      { name: "Fromage blanc 40%", grams: 100 },
+      { name: "Crème 30%", grams: 50 },
+      { name: "Sucre blanc", grams: 40 },
+      { name: "Miel", grams: 0 },
+      { name: "Sirop d'agave", grams: 0 },
+      { name: "Lait entier", grams: 0 },
+    ]);
+    journal = loadFromStorage(STORAGE_KEYS.journal, [
+      {
+        date: '2026-08-04',
+        recipe: 'Pêche-fromage blanc',
+        fruit: 250,
+        fb: 100,
+        cream: 50,
+        sugar: 40,
+        honey: 0,
+        agave: 0,
+        mode: 'Lite Ice Cream',
+        spins: 2,
+        liquid: '1 c.s. lait',
+        scoreTexture: 4,
+        scoreSweet: 4,
+        scoreIcy: 3,
+        notes: 'Crémeux, légèrement poudreux au 1er spin. Re-spin + lait = parfait.',
+        adjustment: 'Réduire sucre à 35g, ajouter xanthane'
+      }
+    ]);
 
-  // Setup
-  setupTheme();
-  setupTabs();
-  setupActions();
+    // Setup
+    setupTheme();
+    setupTabs();
+    setupActions();
 
-  // Render
-  renderSimulator();
-  renderTroubleshoot();
-  renderModes();
-  renderJournal();
-  renderIngredientsDB();
+    // Render all sections
+    renderSimulator();
+    renderTroubleshoot();
+    renderModes();
+    renderJournal();
+    renderIngredientsDB();
+  } catch (err) {
+    console.error('Erreur lors de l’initialisation de l’app:', err);
+    alert('Une erreur est survenue au chargement de l’application. Ouvre la console (F12) pour voir le détail.');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
