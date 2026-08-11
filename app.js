@@ -632,7 +632,7 @@ function renderIngredientsDB() {
     tbody.appendChild(tr);
   });
 
-  tbody.querySelectorAll('input').forEach(el => {
+   tbody.querySelectorAll('input').forEach(el => {
     el.addEventListener('change', (e) => {
       const idx = parseInt(e.target.dataset.iidx);
       const field = e.target.dataset.ifield;
@@ -642,11 +642,22 @@ function renderIngredientsDB() {
       } else if (field === 'kcal') {
         val = parseInt(val) || 0;
       }
-      ingredientsDB[idx][field] = val;
-      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-      renderSimulator();
+      
+      // Sécurité : Vérifie que la ligne de la base d'ingrédients existe bien avant d'écrire
+      if (ingredientsDB[idx]) {
+        ingredientsDB[idx][field] = val;
+        saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
+        
+        // Sécurité : On s'assure que le simulateur peut être recalculé sans planter
+        try {
+          renderSimulator();
+        } catch (err) {
+          console.warn("Le simulateur n'a pas pu être recalculé instantanément :", err);
+        }
+      }
     });
   });
+
 }
 
 // ============================================================================
