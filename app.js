@@ -73,6 +73,26 @@ const TROUBLESHOOT = [
     fixNow: "Laisser reposer 10 min sur le comptoir, puis retenter.",
     fixNext: "Congeler au moins 24h à plat. Température cible: -22 à -13°C." },
 ];
+// ============================================================================
+// CONSEILS PRO TEXTUELS
+// ============================================================================
+const TIPS_DATA = [
+  "L'eau libre crée les cristaux. La matière grasse et le sucre fixent cette eau pour l'empêcher de figer comme un glaçon brut.",
+  "Le sucre abaisse le point de congélation. Sans sucre ou sans édulcorant adapté, le bloc sera impossible à briser proprement.",
+  "Les stabilisants (Xanthane, Pudding) agissent comme des éponges à eau. Ils permettent de lier les bases légères ou pauvres en gras.",
+  "Congelez toujours vos pots à plat sur une surface parfaitement horizontale pendant 24 heures minimum à -18°C."
+];
+
+// Données pour le tableau comparatif des modes déjà présents dans votre HTML
+const MODES_DATA = [
+  { mode: "Ice Cream", desc: "Glace traditionnelle équilibrée à base de lait entier et crème.", fat: "5% - 12%", sugar: "14% - 22%" },
+  { mode: "Lite Ice Cream", desc: "Bases allégées en sucre/gras ou contenant des édulcorants. Gèle très dur.", fat: "< 5%", sugar: "< 14%" },
+  { mode: "Sorbet", desc: "Préparations de fruits frais riches en eau et en jus, sans graisses.", fat: "0%", sugar: "> 12%" },
+  { mode: "Frozen Yogurt", desc: "Bases construites principalement autour du yaourt ou fromage blanc.", fat: "3% - 9%", sugar: "12% - 18%" },
+  { mode: "Gelato", desc: "Glaces italiennes denses à forte concentration de matières grasses.", fat: "> 11%", sugar: "16% - 22%" }
+];
+
+let catalogueIngredients = [];
 
 // ============================================================================
 // CONSEILS PRO
@@ -89,6 +109,18 @@ const TIPS = [
   "Le re-spin est normal après le premier cycle, surtout pour les bases faibles en MG ou en sucre. Ne pas hésiter à l'utiliser.",
   "Toujours ajuster par petites quantités: on peut ajouter du liquide, mais pas en retirer. Commencer par 1 c. à soupe.",
 ];
+// ============================================================================
+// DONNÉES DES MODES COMPARATIFS
+// ============================================================================
+const MODES_DATA = [
+  { mode: "Ice Cream", desc: "Glace traditionnelle équilibrée à base de lait entier et crème.", fat: "5% - 12%", sugar: "14% - 22%" },
+  { mode: "Lite Ice Cream", desc: "Bases allégées en sucre/gras ou contenant des édulcorants. Gèle très dur.", fat: "< 5%", sugar: "< 14%" },
+  { mode: "Sorbet", desc: "Préparations de fruits frais riches en eau et en jus, sans graisses.", fat: "0%", sugar: "> 12%" },
+  { mode: "Frozen Yogurt", desc: "Bases construites principalement autour du yaourt ou fromage blanc.", fat: "3% - 9%", sugar: "12% - 18%" },
+  { mode: "Gelato", desc: "Glaces italiennes denses à forte concentration de matières grasses.", fat: "> 11%", sugar: "16% - 22%" }
+];
+
+let catalogueIngredients = [];
 
 // ============================================================================
 // DONNÉES DES MODES
@@ -112,6 +144,7 @@ const STEPS = [
   { title: "Mix-in (optionnel)", desc: "Après obtention de la texture souhaitée, creuser un trou au centre, ajouter les mix-ins (fruits, noix, chocolat), puis lancer le cycle Mix-in." },
   { title: "Service", desc: "Servir immédiatement. La glace Creami est meilleure fraîchement spinée. Ne pas recongeler après traitement (texture dégradée)." },
 ];
+let catalogueIngredients = [];
 
 // ============================================================================
 // ÉTAT DE L'APPLICATION
@@ -167,7 +200,7 @@ const STORAGE_KEYS = {
 };
 
 // ============================================================================
-// FONCTIONS DE CALCUL
+// FONCTIONS DE CALCUL (CORRIGÉES ET SÉCURISÉES)
 // ============================================================================
 function findIngredient(name) {
   return ingredientsDB.find(i => i.name === name) || null;
@@ -175,27 +208,33 @@ function findIngredient(name) {
 
 function calcIngredientLine(line) {
   const ing = findIngredient(line.name);
-  if (!ing) return { water: 0, fat: 0, sugarEquiv: 0, solids: 0, category: '' };
+  if (!ing) return { water: 0, fat: 0, sugarEquiv: 0, solids: 0, kcal: 0, category: '' };
+  
   const grams = Math.max(0, line.grams || 0);
-  const water = ing.water;
-  const fat = ing.fat;
-  const sugarEquiv = grams * ing.carbs * ing.sweetness;
-  const solids = grams * (1 - water);
-  return { water, fat, sugarEquiv, solids, category: ing.category };
+  const water = grams * ing.water;
+  const fat = grams * ing.fat;
+  const sugarEquiv = grams * ing.carbs * (ing.sweetness || 1.0);
+  const solids = grams * (1 - ing.water);
+  const kcal = (grams * ing.kcal) / 100; // Conversion : kcal pour 100g ramené au poids réel
+  
+  return { water, fat, sugarEquiv, solids, kcal, category: ing.category };
 }
 
 function calcTotals(lines) {
-  let totalWeight = 0, totalWaterPond = 0, totalFatPond = 0, totalSugar = 0, totalSolids = 0;
+  let totalWeight = 0, totalWater = 0, totalFat = 0, totalSugar = 0, totalSolids = 0, totalKcal = 0;
   let fruitG = 0, dairyG = 0, sweetenerG = 0;
 
   for (const line of lines) {
     const c = calcIngredientLine(line);
     const g = Math.max(0, line.grams || 0);
+    
     totalWeight += g;
-    totalWaterPond += g * c.water;
-    totalFatPond += g * c.fat;
+    totalWater += c.water;
+    totalFat += c.fat;
     totalSugar += c.sugarEquiv;
     totalSolids += c.solids;
+    totalKcal += c.kcal;
+    
     if (c.category === 'Fruit') fruitG += g;
     if (c.category === 'Laitier') dairyG += g;
     if (c.category === 'Sucre') sweetenerG += g;
@@ -203,11 +242,14 @@ function calcTotals(lines) {
 
   return {
     totalWeight,
-    waterPct: totalWeight > 0 ? totalWaterPond / totalWeight : 0,
-    fatPct: totalWeight > 0 ? totalFatPond / totalWeight : 0,
-    sugarEquiv: totalSugar,
+    totalWater,
+    totalFat,
+    totalSugar,
+    totalSolids,
+    totalKcal,
+    waterPct: totalWeight > 0 ? totalWater / totalWeight : 0,
+    fatPct: totalWeight > 0 ? totalFat / totalWeight : 0,
     sugarPct: totalWeight > 0 ? totalSugar / totalWeight : 0,
-    solids: totalSolids,
     solidsPct: totalWeight > 0 ? totalSolids / totalWeight : 0,
     fruitPct: totalWeight > 0 ? fruitG / totalWeight : 0,
     dairyPct: totalWeight > 0 ? dairyG / totalWeight : 0,
@@ -216,31 +258,52 @@ function calcTotals(lines) {
 }
 
 function evaluateFat(fatPct) {
-  if (fatPct < 0.05) return { text: "Faible — texture légère, risque de cristaux", level: 'warn' };
-  if (fatPct < 0.12) return { text: "Moyen — bon équilibre", level: 'good' };
-  if (fatPct < 0.20) return { text: "Élevé — texture riche", level: 'good' };
-  return { text: "Très élevé — risque de trop gras", level: 'warn' };
+  if (fatPct < 0.05) return { text: "Faible — texture légère, risque de cristaux de glace ❄️", level: 'warn' };
+  if (fatPct < 0.12) return { text: "Moyen — bon équilibre pour une glace classique 👍", level: 'good' };
+  if (fatPct < 0.20) return { text: "Élevé — texture très riche et onctueuse 🍨", level: 'good' };
+  return { text: "Très élevé — risque de texture lourde ou grasse 🍯", level: 'warn' };
 }
 
 function evaluateSugar(sugarPct) {
-  if (sugarPct < 0.12) return { text: "Faible — risque de texture dure", level: 'bad' };
-  if (sugarPct < 0.22) return { text: "Optimal — bon équilibre", level: 'good' };
-  if (sugarPct < 0.30) return { text: "Élevé — risque de trop mou", level: 'warn' };
-  return { text: "Très élevé — ne gèlera pas", level: 'bad' };
+  if (sugarPct < 0.12) return { text: "Faible — risque de bloc dur (attention au moteur !) ⚠️", level: 'bad' };
+  if (sugarPct < 0.22) return { text: "Optimal — bon équilibre anti-congélation ✅", level: 'good' };
+  if (sugarPct < 0.30) return { text: "Élevé — la préparation risque de rester trop molle 🫠", level: 'warn' };
+  return { text: "Très élevé — ne gèlera jamais en bloc solide ❌", level: 'bad' };
 }
 
 function evaluateFruit(fruitPct) {
-  if (fruitPct < 0.20) return { text: "Faible — profil glace lacté", level: 'good' };
-  if (fruitPct < 0.40) return { text: "Moyen — glace fruitée", level: 'good' };
-  if (fruitPct < 0.60) return { text: "Élevé — sorbet lacté", level: 'warn' };
-  return { text: "Très élevé — profil sorbet", level: 'warn' };
+  if (fruitPct < 0.20) return { text: "Faible — profil à dominance lactée.", level: 'good' };
+  if (fruitPct < 0.40) return { text: "Moyen — glace aromatisée aux fruits.", level: 'good' };
+  if (fruitPct < 0.60) return { text: "Élevé — profil intermédiaire ou sorbet lacté.", level: 'warn' };
+  return { text: "Très élevé — profil pur sorbet fruité.", level: 'warn' };
 }
 
-function recommendMode(dairyPct, fatPct) {
-  if (dairyPct < 0.10) return 'SORBET';
-  if (fatPct < 0.08) return 'LITE ICE CREAM';
-  if (fatPct < 0.18) return 'ICE CREAM';
-  return 'ICE CREAM (riche)';
+function recommendMode(dairyPct, fatPct, lines, totals) {
+  if (totals.totalWeight === 0) return '—';
+  
+  const pEau = totals.totalWater / totals.totalWeight;
+  const pSucre = totals.totalSugar / totals.totalWeight;
+  
+  // Répétition des catégories présentes dans la recette
+  const categories = lines.map(l => {
+    const ing = findIngredient(l.name);
+    return ing ? ing.category : '';
+  });
+
+  // Règles physiques fiables pour la machine Ninja Creami
+  if (pEau >= 0.70 && fatPct < 0.025 && (categories.includes('Fruit') || pSucre >= 0.08)) {
+    return 'Sorbet';
+  } else if (fatPct >= 0.11) {
+    return 'Gelato';
+  } else if (categories.includes('Fruit') && pEau < 0.68) {
+    return 'Smoothie Bowl';
+  } else if (fatPct < 0.045) {
+    return 'Lite Ice Cream';
+  } else if (categories.includes('Laitier') && fatPct < 0.09 && fatPct >= 0.03) {
+    return 'Frozen Yogurt';
+  }
+  
+  return 'Ice Cream';
 }
 
 // ============================================================================
@@ -253,10 +316,11 @@ function fmtPct0(n) { return Math.round(n * 100) + '%'; }
 function fmtG(n) { return fmt1(n) + ' g'; }
 
 // ============================================================================
-// RENDU — SIMULATEUR
+// RENDU — SIMULATEUR (CORRIGÉ ET ALIGNÉ SUR LE DESIGN ORIGINAL)
 // ============================================================================
 function renderIngredientRows() {
   const tbody = document.getElementById('ingredient-rows');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   recipeLines.forEach((line, idx) => {
@@ -264,30 +328,38 @@ function renderIngredientRows() {
     const ing = findIngredient(line.name);
     const c = calcIngredientLine(line);
 
-    // Ingredient dropdown
+    // Menu déroulant des ingrédients
     const nameOptions = ingredientsDB.map(i =>
       `<option value="${i.name}" ${i.name === line.name ? 'selected' : ''}>${i.name}</option>`
     ).join('');
 
+    // Rendu strict des 9 colonnes attendues par votre fichier HTML d'origine
     tr.innerHTML = `
       <td>
-        <select data-idx="${idx}" data-field="name">${nameOptions}</select>
+        <select class="select-ingredient" data-idx="${idx}" data-field="name">${nameOptions}</select>
       </td>
-      <td class="num"><input type="number" min="0" step="1" value="${line.grams}" data-idx="${idx}" data-field="grams"></td>
-      <td class="num">${ing ? fmtPct(ing.water) : '—'}</td>
-      <td class="num">${ing ? fmtPct(ing.fat) : '—'}</td>
-      <td class="num">${fmt1(c.sugarEquiv)}</td>
-      <td class="num">${fmt1(c.solids)}</td>
-      <td>${ing ? ing.category : ''}</td>
+      <td class="num">
+        <input type="number" class="input-poids" min="0" step="5" value="${line.grams}" data-idx="${idx}" data-field="grams">
+      </td>
+      <td class="num val-water">${fmt1(c.water)}g</td>
+      <td class="num val-fat">${fmt1(c.fat)}g</td>
+      <td class="num val-sugar">${fmt1(c.sugarEquiv)}g</td>
+      <td class="num val-solids">${fmt1(c.solids)}g</td>
+      <td class="num val-kcal">${fmt0(c.kcal)} kcal</td>
+      <td class="val-category">${ing ? ing.category : '—'}</td>
       <td><button class="row-delete" data-idx="${idx}" data-action="delete" aria-label="Supprimer">✕</button></td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Attach listeners
-  tbody.querySelectorAll('select, input').forEach(el => {
+  // Attach listeners : 'input' permet de calculer pendant la saisie sans bloquer le focus
+  tbody.querySelectorAll('input').forEach(el => {
+    el.addEventListener('input', onIngredientChange);
+  });
+  tbody.querySelectorAll('select').forEach(el => {
     el.addEventListener('change', onIngredientChange);
   });
+
   tbody.querySelectorAll('[data-action="delete"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
@@ -301,22 +373,35 @@ function renderIngredientRows() {
 function onIngredientChange(e) {
   const idx = parseInt(e.target.dataset.idx);
   const field = e.target.dataset.field;
+  
   if (field === 'grams') {
     recipeLines[idx].grams = Math.max(0, parseInt(e.target.value) || 0);
   } else {
     recipeLines[idx][field] = e.target.value;
   }
+  
   saveToStorage(STORAGE_KEYS.recipe, recipeLines);
-  renderSimulator();
+  
+  // Met à jour uniquement les totaux et les analyses pour éviter de reconstruire le tableau pendant que l'utilisateur tape
+  const totals = renderTotals();
+  renderAnalysis(totals);
+  renderEvaluations(totals);
 }
 
 function renderTotals() {
   const t = calcTotals(recipeLines);
+  
   document.getElementById('total-weight').textContent = fmt0(t.totalWeight) + ' g';
-  document.getElementById('total-water').textContent = fmtPct(t.waterPct);
-  document.getElementById('total-fat').textContent = fmtPct(t.fatPct);
-  document.getElementById('total-sugar').textContent = fmt1(t.sugarEquiv) + ' g';
-  document.getElementById('total-solids').textContent = fmt1(t.solids) + ' g';
+  document.getElementById('total-water').textContent = fmt1(t.totalWater) + ' g';
+  document.getElementById('total-fat').textContent = fmt1(t.totalFat) + ' g';
+  document.getElementById('total-sugar').textContent = fmt1(t.totalSugar) + ' g';
+  document.getElementById('total-solids').textContent = fmt1(t.totalSolids) + ' g';
+  
+  const totalKcalEl = document.getElementById('total-kcal');
+  if (totalKcalEl) {
+    totalKcalEl.textContent = fmt0(t.totalKcal) + ' kcal';
+  }
+  
   return t;
 }
 
@@ -327,13 +412,15 @@ function renderAnalysis(totals) {
     { label: 'Part de laitiers', value: fmtPct(totals.dairyPct), note: 'Fromage blanc + crème' },
     { label: 'Part de sucrants', value: fmtPct(totals.sweetenerPct), note: 'Sucre + miel + agave' },
     { label: 'MG globale', value: fmtPct(totals.fatPct), note: 'Matière grasse pondérée' },
-    { label: 'Sucre équivalent', value: fmt1(totals.sugarEquiv) + ' g', note: 'Pouvoir sucrant en éq. sucre' },
+    { label: 'Sucre équivalent', value: fmt1(totals.totalSugar) + ' g', note: 'Pouvoir sucrant en éq. sucre' },
     { label: 'Sucre éq. (%)', value: fmtPct(totals.sugarPct), note: 'Sucre éq. / poids total' },
-    { label: 'Extrait sec', value: fmt1(totals.solids) + ' g', note: 'Matières non aqueuses' },
+    { label: 'Extrait sec', value: fmt1(totals.totalSolids) + ' g', note: 'Matières non aqueuses' },
     { label: 'Extrait sec (%)', value: fmtPct(totals.solidsPct), note: 'Proportion de matières solides' },
   ];
 
   const grid = document.getElementById('analysis-stats');
+  if (!grid) return;
+  
   grid.innerHTML = stats.map(s => `
     <div class="stat-item">
       <div class="stat-label">${s.label}</div>
@@ -355,16 +442,22 @@ function renderEvaluations(totals) {
   ];
 
   const grid = document.getElementById('eval-grid');
-  grid.innerHTML = evals.map(e => `
-    <div class="eval-item ${e.level}">
-      <div class="eval-label">${e.label}</div>
-      <div class="eval-value">${e.value}</div>
-      <div class="stat-note">${e.target}</div>
-    </div>
-  `).join('');
+  if (grid) {
+    grid.innerHTML = evals.map(e => `
+      <div class="eval-item ${e.level}">
+        <div class="eval-label">${e.label}</div>
+        <div class="eval-value">${e.value}</div>
+        <div class="stat-note">${e.target}</div>
+      </div>
+    `).join('');
+  }
 
-  const mode = recommendMode(totals.dairyPct, totals.fatPct);
-  document.getElementById('recommended-mode').textContent = mode;
+  // Utilisation de la fonction de recommandation mise à jour avec les vrais modes Ninja Creami
+  const mode = recommendMode(totals.dairyPct, totals.fatPct, recipeLines, totals);
+  const displayElement = document.getElementById('recommended-mode');
+  if (displayElement) {
+    displayElement.textContent = mode;
+  }
 }
 
 function renderSimulator() {
@@ -373,6 +466,7 @@ function renderSimulator() {
   renderAnalysis(totals);
   renderEvaluations(totals);
 }
+
 
 // ============================================================================
 // RENDU — GUIDE TEXTURE
@@ -418,21 +512,19 @@ function renderModes() {
 }
 
 // ============================================================================
-// RENDU — JOURNAL
+// RENDU — JOURNAL (SÉCURISÉ CONTRE LES ÉLÉMENTS ABSENTS)
 // ============================================================================
 function renderJournal() {
   const tbody = document.getElementById('journal-rows');
+  if (!tbody) return; // Sécurité : si l'élément n'existe pas dans le HTML, on stoppe pour éviter un crash
+  
   tbody.innerHTML = '';
 
   journal.forEach((entry, idx) => {
     const tr = document.createElement('tr');
     const modeOptions = MODES.map(m => `<option ${m.mode === entry.mode ? 'selected' : ''}>${m.mode}</option>`).join('');
 
-    const scoreCell = (score) => {
-      if (!score) return '<td class="num"></td>';
-      return `<td class="num"><span class="score-cell score-${score}">${score}</span></td>`;
-    };
-
+    // Rendu des lignes du journal avec la coloration des cellules de score (Fidèle à votre CSS)
     tr.innerHTML = `
       <td><input type="date" value="${entry.date}" data-jidx="${idx}" data-field="date"></td>
       <td><input type="text" value="${entry.recipe || ''}" data-jidx="${idx}" data-field="recipe" placeholder="Nom"></td>
@@ -445,9 +537,9 @@ function renderJournal() {
       <td><select data-jidx="${idx}" data-field="mode">${modeOptions}</select></td>
       <td class="num"><input type="number" min="1" max="5" value="${entry.spins || 1}" data-jidx="${idx}" data-field="spins"></td>
       <td><input type="text" value="${entry.liquid || ''}" data-jidx="${idx}" data-field="liquid" placeholder="ex: 1 c.s. lait"></td>
-      <td class="num"><input type="number" min="1" max="5" value="${entry.scoreTexture || ''}" data-jidx="${idx}" data-field="scoreTexture"></td>
-      <td class="num"><input type="number" min="1" max="5" value="${entry.scoreSweet || ''}" data-jidx="${idx}" data-field="scoreSweet"></td>
-      <td class="num"><input type="number" min="1" max="5" value="${entry.scoreIcy || ''}" data-jidx="${idx}" data-field="scoreIcy"></td>
+      <td class="num"><span class="score-cell score-${entry.scoreTexture || 3}">${entry.scoreTexture || 3}</span><input type="hidden" value="${entry.scoreTexture || 3}" data-jidx="${idx}" data-field="scoreTexture"></td>
+      <td class="num"><span class="score-cell score-${entry.scoreSweet || 3}">${entry.scoreSweet || 3}</span><input type="hidden" value="${entry.scoreSweet || 3}" data-jidx="${idx}" data-field="scoreSweet"></td>
+      <td class="num"><span class="score-cell score-${entry.scoreIcy || 3}">${entry.scoreIcy || 3}</span><input type="hidden" value="${entry.scoreIcy || 3}" data-jidx="${idx}" data-field="scoreIcy"></td>
       <td><input type="text" value="${entry.notes || ''}" data-jidx="${idx}" data-field="notes" placeholder="Notes"></td>
       <td><input type="text" value="${entry.adjustment || ''}" data-jidx="${idx}" data-field="adjustment" placeholder="Ajustement"></td>
       <td><button class="row-delete" data-jidx="${idx}" data-action="jdelete" aria-label="Supprimer">✕</button></td>
@@ -455,7 +547,7 @@ function renderJournal() {
     tbody.appendChild(tr);
   });
 
-  // Listeners
+  // Listeners du journal
   tbody.querySelectorAll('input, select').forEach(el => {
     el.addEventListener('change', onJournalChange);
   });
@@ -468,7 +560,6 @@ function renderJournal() {
     });
   });
 
-  // Stats
   renderJournalStats();
 }
 
@@ -485,8 +576,10 @@ function onJournalChange(e) {
 }
 
 function renderJournalStats() {
+  const statsContainer = document.getElementById('journal-stats');
+  if (!statsContainer) return; // Sécurité anti-crash
+  
   const valid = journal.filter(j => j.recipe);
-  const scores = ['scoreTexture', 'scoreSweet', 'scoreIcy'];
   const avg = (field) => {
     const vals = valid.map(j => j[field]).filter(v => v > 0);
     return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2).replace('.', ',') : '—';
@@ -504,7 +597,7 @@ function renderJournalStats() {
     { label: 'Nb moyen de spins', value: avgSpins() },
   ];
 
-  document.getElementById('journal-stats').innerHTML = stats.map(s => `
+  statsContainer.innerHTML = stats.map(s => `
     <div class="stat-item">
       <div class="stat-label">${s.label}</div>
       <div class="stat-value">${s.value}</div>
@@ -513,10 +606,12 @@ function renderJournalStats() {
 }
 
 // ============================================================================
-// RENDU — BASE D'INGRÉDIENTS
+// RENDU — BASE D'INGRÉDIENTS (SÉCURISÉ CONTRE LES ÉLÉMENTS ABSENTS)
 // ============================================================================
 function renderIngredientsDB() {
   const tbody = document.getElementById('ingredients-db-rows');
+  if (!tbody) return; // Sécurité anti-crash
+  
   tbody.innerHTML = '';
 
   ingredientsDB.forEach((ing, idx) => {
@@ -598,108 +693,135 @@ function setupTheme() {
 }
 
 // ============================================================================
-// ACTIONS BOUTONS
+// ACTIONS BOUTONS (SÉCURISÉES CONTRE LES ÉLÉMENTS ABSENTS)
 // ============================================================================
 function setupActions() {
   // Add ingredient row
-  document.getElementById('add-ingredient').addEventListener('click', () => {
-    recipeLines.push({ name: ingredientsDB[0].name, grams: 0 });
-    saveToStorage(STORAGE_KEYS.recipe, recipeLines);
-    renderSimulator();
-  });
+  const btnAddIng = document.getElementById('add-ingredient');
+  if (btnAddIng) {
+    btnAddIng.addEventListener('click', () => {
+      recipeLines.push({ name: ingredientsDB[0].name, grams: 0 });
+      saveToStorage(STORAGE_KEYS.recipe, recipeLines);
+      renderSimulator();
+    });
+  }
 
   // Mode select save
   const modeSelect = document.getElementById('mode-select-input');
-  const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
-  modeSelect.value = savedMode;
-  modeSelect.addEventListener('change', () => {
-    saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
-  });
-
-  // Journal: add entry
-  document.getElementById('add-journal').addEventListener('click', () => {
-    const today = new Date().toISOString().split('T')[0];
-    journal.push({
-      date: today, recipe: '', fruit: 0, fb: 0, cream: 0, sugar: 0, honey: 0, agave: 0,
-      mode: 'Lite Ice Cream', spins: 1, liquid: '', scoreTexture: '', scoreSweet: '', scoreIcy: '',
-      notes: '', adjustment: ''
+  if (modeSelect) {
+    const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
+    modeSelect.value = savedMode;
+    modeSelect.addEventListener('change', () => {
+      saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
     });
-    saveToStorage(STORAGE_KEYS.journal, journal);
-    renderJournal();
-  });
+  }
 
-  // Journal: export
-  document.getElementById('export-journal').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(journal, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'creami-journal-' + new Date().toISOString().split('T')[0] + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  // Journal: import
-  document.getElementById('import-journal').addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          journal = JSON.parse(ev.target.result);
-          saveToStorage(STORAGE_KEYS.journal, journal);
-          renderJournal();
-        } catch (err) {
-          alert('Fichier JSON invalide');
-        }
-      };
-      reader.readAsText(file);
-    });
-    input.click();
-  });
-
-  // Journal: clear
-  document.getElementById('clear-journal').addEventListener('click', () => {
-    if (confirm('Effacer tous les essais du journal ?')) {
-      journal = [];
+  // Journal: add entry (Sécurisé)
+  const btnAddJournal = document.getElementById('add-journal');
+  if (btnAddJournal) {
+    btnAddJournal.addEventListener('click', () => {
+      const today = new Date().toISOString().split('T')[0];
+      journal.push({
+        date: today, recipe: '', fruit: 0, fb: 0, cream: 0, sugar: 0, honey: 0, agave: 0,
+        mode: 'Lite Ice Cream', spins: 1, liquid: '', scoreTexture: '', scoreSweet: '', scoreIcy: '',
+        notes: '', adjustment: ''
+      });
       saveToStorage(STORAGE_KEYS.journal, journal);
       renderJournal();
-    }
-  });
+    });
+  }
 
-  // Ingredients DB: add row
-  document.getElementById('add-ingredient-db').addEventListener('click', () => {
-    ingredientsDB.push({ name: "Nouvel ingrédient", category: "Arôme", water: 0.5, fat: 0, protein: 0, carbs: 0, sweetness: 0, kcal: 0, fiber: 0, notes: "" });
-    saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-    renderIngredientsDB();
-    renderSimulator();
-  });
+  // Journal: export (Sécurisé)
+  const btnExportJournal = document.getElementById('export-journal');
+  if (btnExportJournal) {
+    btnExportJournal.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(journal, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'creami-journal-' + new Date().toISOString().split('T')[0] + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
 
-  // Ingredients DB: delete row (event delegation)
-  document.getElementById('ingredients-db-rows').addEventListener('click', (e) => {
-    if (e.target.classList.contains('row-delete') && e.target.dataset.action === 'idelete') {
-      const idx = parseInt(e.target.dataset.iidx);
-      ingredientsDB.splice(idx, 1);
+  // Journal: import (Sécurisé)
+  const btnImportJournal = document.getElementById('import-journal');
+  if (btnImportJournal) {
+    btnImportJournal.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            journal = JSON.parse(ev.target.result);
+            saveToStorage(STORAGE_KEYS.journal, journal);
+            renderJournal();
+          } catch (err) {
+            alert('Fichier JSON invalide');
+          }
+        };
+        reader.readAsText(file);
+      });
+      input.click();
+    });
+  }
+
+  // Journal: clear (Sécurisé)
+  const btnClearJournal = document.getElementById('clear-journal');
+  if (btnClearJournal) {
+    btnClearJournal.addEventListener('click', () => {
+      if (confirm('Effacer tous les essais du journal ?')) {
+        journal = [];
+        saveToStorage(STORAGE_KEYS.journal, journal);
+        renderJournal();
+      }
+    });
+  }
+
+  // Ingredients DB: add row (Sécurisé)
+  const btnAddIngDb = document.getElementById('add-ingredient-db');
+  if (btnAddIngDb) {
+    btnAddIngDb.addEventListener('click', () => {
+      ingredientsDB.push({ name: "Nouvel ingrédient", category: "Arôme", water: 0.5, fat: 0, protein: 0, carbs: 0, sweetness: 0, kcal: 0, fiber: 0, notes: "" });
       saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
       renderIngredientsDB();
       renderSimulator();
-    }
-  });
+    });
+  }
 
-  // Ingredients: reset
-  document.getElementById('reset-ingredients').addEventListener('click', () => {
-    if (confirm('Réinitialiser la base d\'ingrédients aux valeurs par défaut ? Vos modifications seront perdues.')) {
-      ingredientsDB = JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS));
-      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-      renderIngredientsDB();
-      renderSimulator();
-    }
-  });
+  // Ingredients DB: delete row (Sécurisé)
+  const rowIngDb = document.getElementById('ingredients-db-rows');
+  if (rowIngDb) {
+    rowIngDb.addEventListener('click', (e) => {
+      if (e.target.classList.contains('row-delete') && e.target.dataset.action === 'idelete') {
+        const idx = parseInt(e.target.dataset.iidx);
+        ingredientsDB.splice(idx, 1);
+        saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
+        renderIngredientsDB();
+        renderSimulator();
+      }
+    });
+  }
+
+  // Ingredients: reset (Sécurisé)
+  const btnResetIng = document.getElementById('reset-ingredients');
+  if (btnResetIng) {
+    btnResetIng.addEventListener('click', () => {
+      if (confirm('Réinitialiser la base d\'ingrédients aux valeurs par défaut ? Vos modifications seront perdues.')) {
+        ingredientsDB = JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS));
+        saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
+        renderIngredientsDB();
+        renderSimulator();
+      }
+    });
+  }
 }
+
 
 // ============================================================================
 // INITIALISATION
