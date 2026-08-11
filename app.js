@@ -557,18 +557,33 @@ function renderIngredientsDB() {
 // ============================================================================
 // NAVIGATION PAR ONGLETS
 // ============================================================================
+// ============================================================================
+// NAVIGATION PAR ONGLETS
+// ============================================================================
 function setupTabs() {
   const tabs = document.querySelectorAll('.tab');
   const panels = document.querySelectorAll('.tab-content');
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      const target = tab.dataset.tab;
-      tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      const target = tab.dataset.tab; // ex: "simulator", "texture", "modes", ...
+      const targetPanelId = 'tab-' + target; // ex: "tab-simulator"
+
+      tabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
+
       panels.forEach(p => p.classList.remove('active'));
-      document.getElementById('tab-' + target).classList.add('active');
+
+      const panel = document.getElementById(targetPanelId);
+      if (panel) {
+        panel.classList.add('active');
+      } else {
+        console.warn('Panneau non trouvé pour l’onglet:', target, 'ID attendu:', targetPanelId);
+      }
     });
   });
 }
