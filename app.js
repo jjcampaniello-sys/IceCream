@@ -840,54 +840,12 @@ function setupActions() {
     });
   }
 
-  document.getElementById('reapply-mode').addEventListener('click', () => {
-  const selectedMode = document.getElementById('mode-select-input').value;
-  
-  // 1. Définition des cibles selon le mode
-  const targets = {
-    'Ice Cream': { fat: 0.08, sugar: 0.18 },
-    'Lite Ice Cream': { fat: 0.02, sugar: 0.12 },
-    'Sorbet': { fat: 0.00, sugar: 0.22 },
-    'Gelato': { fat: 0.06, sugar: 0.20 },
-    'Frozen Yogurt': { fat: 0.03, sugar: 0.15 }
-  };
-
-  const target = targets[selectedMode] || targets['Ice Cream'];
-  
-  // 2. Calcul du poids total actuel
-  let currentWeight = recipeIngredients.reduce((sum, ing) => sum + ing.weight, 0);
-  if (currentWeight === 0) return;
-
-  // 3. Calcul des manques théoriques en MG et en Sucre
-  const currentFat = calculateTotalFat(); // Remplacez par votre fonction de calcul MG
-  const currentSugar = calculateTotalSugar(); // Remplacez par votre fonction de calcul Sucre
-
-  const targetFatGrams = currentWeight * target.fat;
-  const targetSugarGrams = currentWeight * target.sugar;
-
-  const diffFat = targetFatGrams - currentFat;
-  const diffSugar = targetSugarGrams - currentSugar;
-
-  // 4. Ajustement ou ajout d'ingrédients de correction
-  if (diffFat > 5) {
-    // Ajout de Crème 30% pour compenser le manque de matière grasse
-    const creamToAdd = Math.round(diffFat / 0.30);
-    addOrUpdateIngredient('Crème liquide 30%', creamToAdd);
-  }
-
-  if (diffSugar > 5) {
-    // Ajout de Sucre pour compenser le manque de sucre éq.
-    const sugarToAdd = Math.round(diffSugar);
-    addOrUpdateIngredient('Sucre', sugarToAdd);
-  }
-
-  // 5. Mettre à jour l'interface utilisateur
-  renderIngredientsTable();
-  updateCalculations();
-  
-  alert(`Recette ajustée pour le mode ${selectedMode} !`);
-});
-
+  const reapplyBtn = document.getElementById('reapply-mode');
+  if (reapplyBtn) {
+    reapplyBtn.addEventListener('click', () => {
+      const selectedMode = document.getElementById('mode-select-input').value;
+      applyModeAdjustment(selectedMode);
+    });
   }
 
   const addJournalBtn = document.getElementById('add-journal');
