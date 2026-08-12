@@ -348,57 +348,110 @@ function adjustLever({ category, valueFn, targetMin, targetMax, preferredName, a
   if (leverValue <= 0) return; // impossible d'ajuster avec cet ingrédient
 
   let weightOther = 0, contribOther = 0;
-  recipeLines.forEach((line, i) => {
-    if (i === idx) return;
-    const g = Math.max(0, line.grams || 0);
-    weightOther += g;
-    const li = findIngredient(line.name);
-    if (li) contribOther += g * valueFn(li);
-  });
-
-  const denom = leverValue - targetPctMid;
-  if (Math.abs(denom) < 1e-9) return; // évite une division par zéro
-  let X = (targetPctMid * weightOther - contribOther) / denom;
-  X = Math.max(0, Math.round(X));
-
-  // Ne jamais dépasser la limite de remplissage du pint
-  const maxAllowedX = Math.max(0, MAX_BATCH_WEIGHT - weightOther);
-  X = Math.min(X, maxAllowedX);
-
-  recipeLines[idx].grams = X;
-}
+// ============================================================================
+// AJUSTEMENT AUTOMATIQUE GLOBAL DES PROPORTIONS (Cible: 530g & Barres au vert)
+// ============================================================================
 
 function applyModeAdjustment(modeName) {
   const target = getModeTargets(modeName);
-  if (!target) return;
+  if (!target || recipeLines.length === 0) return;
 
-  const addedIngredients = [];
+  const TARGET_WEIGHT = 530; // Poids fixe cible (Ninja Creami Deluxe)
+  const numLines = recipeLines.length;
 
-  adjustLever({
-    category: 'Sucre',
-    valueFn: ing => ing.carbs * ing.sweetness,
-    targetMin: target.sugar.min,
-    targetMax: target.sugar.max,
-    preferredName: 'Sucre blanc',
-    addedIngredients,
+  // Récupération des données nutritionnelles associées à chaque ligne de la recette
+  const items = recipeLines.map(line => {
+    const ing = findIngredient(line.name) || { carbs: 0, sweetness: 0, fat: 0 };
+    return {
+      line,
+      sugarFactor: ing.carbs * ing.sweetness,
+      fatFactor: ing.fat,
+      currentGrams: Math.max(0, line.grams || 0)
+    };
   });
 
-  adjustLever({
-    category: 'Laitier',
-    valueFn: ing => ing.fat,
-    targetMin: target.fat.min,
-    targetMax: target.fat.max,
-    preferredName: 'Crème 30%',
-    addedIngredients,
+  // Calcul du poids initial (si 0, attribuer une distribution équitable)
+  let sumGrams = items.reduce((sum, item) => sum + item.currentGrams, 0);
+  if (sumGrams === 0) {
+    items.forEach(item => item.currentGrams = TARGET_WEIGHT / numLines);
+    sumGrams = TARGET_WEIGHT;
+  }
+
+  // 1. Mise à l'échelle initiale pour atteindre 530g
+  let W = items.map(item => (item.currentGrams / sumGrams) * TARGET_WEIGHT);
+
+  // Valeurs cibles au milieu des fourchettes recommandées (pour maximiser la chance d'être au Vert)
+  const targetSugarPct = (target.sugar.min + target.sugar.max) / 2;
+  const targetFatPct = (target.fat.min + target.fat.max) / 2;
+
+  // 2. Algorithme d'optimisation sous contrainte (Gradient descent simple)
+  // Ajuste de façon minimale les ingrédients pour atteindre les % de MG et Sucre cibles
+  const iterations = 500;
+  const learningRate = 0.05;
+
+  for (let iter = 0; iter < iterations; iter++) {
+    let currentWeight = W.reduce((a, b) => a + b, 0);
+    if (currentWeight === 0) break;
+
+    let currentSugarPct = W.reduce((sum, w, i) => sum + w * items[i].sugarFactor, 0) / currentWeight;
+    let currentFatPct = W.reduce((sum, w, i) => sum + w * items[i].fatFactor, 0) / currentWeight;
+
+    // Écarts par rapport au milieu de la zone verte
+    const errSugar = currentSugarPct - targetSugarPct;
+    const errFat = currentFatPct - targetFatPct;
+
+    // Si nous sommes déjà dans les tolérances min/max ("au vert"), on peut accélérer la convergence
+    const isSugarOk = currentSugarPct >= target.sugar.min && currentSugarPct <= target.sugar.max;
+    const isFatOk = currentFatPct >= target.fat.min && currentFatPct <= target.fat.max;
+
+    if (isSugarOk && isFatOk && Math.abs(currentWeight - TARGET_WEIGHT) < 0.1) {
+      break; // Stopper si tout est parfaitement au vert
+    }
+
+    // Mise à jour adaptative de chaque ingrédient
+    for (let i = 0; i < numLines; i++) {
+      const sugarGrad = items[i].sugarFactor - currentSugarPct;
+      const fatGrad = items[i].fatFactor - currentFatPct;
+
+      // Correction selon les erreurs de sucre et de gras
+      let delta = 0;
+      if (!isSugarOk) delta -= errSugar * sugarGrad;
+      if (!isFatOk) delta -= errFat * fatGrad;
+
+      W[i] = Math.max(0, W[i] + learningRate * delta);
+    }
+
+    // Normalisation stricte à 530g à chaque itération
+    const newSum = W.reduce((a, b) => a + b, 0);
+    if (newSum > 0) {
+      W = W.map(w => (w / newSum) * TARGET_WEIGHT);
+    }
+  }
+
+  // 3. Arrondi des valeurs en nombres entiers pour totaliser exactement 530g
+  let roundedW = W.map(w => Math.round(w));
+  let roundSum = roundedW.reduce((a, b) => a + b, 0);
+  let diff = TARGET_WEIGHT - roundSum;
+
+  // Ajustement de l'arrondi sur l'ingrédient principal pour combler la différence de ±1g
+  if (diff !== 0 && roundedW.length > 0) {
+    let maxIdx = 0;
+    for (let i = 1; i < roundedW.length; i++) {
+      if (roundedW[i] > roundedW[maxIdx]) maxIdx = i;
+    }
+    roundedW[maxIdx] += diff;
+  }
+
+  // Appliquer les nouvelles masses arrondies aux lignes de la recette
+  recipeLines.forEach((line, i) => {
+    line.grams = roundedW[i];
   });
 
+  // Sauvegarde et mise à jour de l'affichage
   saveToStorage(STORAGE_KEYS.recipe, recipeLines);
   renderSimulator();
-
-  if (addedIngredients.length > 0) {
-    alert(`Ajustement automatique (${modeName}) : ${addedIngredients.join(', ')} ajouté(s) à la recette pour atteindre la cible.`);
-  }
 }
+
 
 // Generic evaluator: below range = warn/bad, within range = good, above range = warn/bad
 function evaluateAgainstRange(value, min, max, lowLabel, goodLabel, highLabel) {
