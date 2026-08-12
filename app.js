@@ -250,6 +250,14 @@ function getModeTargets(modeName) {
   };
 }
 
+function getSelectedModeValue() {
+  const elTarget = document.getElementById('mode-select-target');
+  if (elTarget && elTarget.value) return elTarget.value;
+  const elInput = document.getElementById('mode-select-input');
+  if (elInput && elInput.value) return elInput.value;
+  return 'Lite Ice Cream';
+}
+
 function applyModeAdjustment(modeName) {
   const target = getModeTargets(modeName);
   if (!target || recipeLines.length === 0) return;
@@ -512,8 +520,7 @@ function renderEvaluations(totals) {
   const grid = document.getElementById('eval-grid');
   if (!grid) return;
 
-  const modeSelect = document.getElementById('mode-select-input');
-  const selectedMode = modeSelect ? modeSelect.value : null;
+  const selectedMode = getSelectedModeValue();
   const target = selectedMode ? getModeTargets(selectedMode) : null;
 
   const fatEval = evaluateFat(totals.fatPct, target);
@@ -830,12 +837,22 @@ function setupActions() {
     });
   }
 
-  const modeSelect = document.getElementById('mode-select-input');
-  if (modeSelect) {
-    const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
-    modeSelect.value = savedMode;
-    modeSelect.addEventListener('change', () => {
-      saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
+  const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
+  
+  const modeSelectInput = document.getElementById('mode-select-input');
+  if (modeSelectInput) {
+    modeSelectInput.value = savedMode;
+    modeSelectInput.addEventListener('change', () => {
+      saveToStorage(STORAGE_KEYS.mode, modeSelectInput.value);
+      renderSimulator();
+    });
+  }
+
+  const modeSelectTarget = document.getElementById('mode-select-target');
+  if (modeSelectTarget) {
+    modeSelectTarget.value = savedMode;
+    modeSelectTarget.addEventListener('change', () => {
+      saveToStorage(STORAGE_KEYS.mode, modeSelectTarget.value);
       renderSimulator();
     });
   }
@@ -843,7 +860,7 @@ function setupActions() {
   const reapplyBtn = document.getElementById('reapply-mode');
   if (reapplyBtn) {
     reapplyBtn.addEventListener('click', () => {
-      const selectedMode = document.getElementById('mode-select-input').value;
+      const selectedMode = getSelectedModeValue();
       applyModeAdjustment(selectedMode);
     });
   }
