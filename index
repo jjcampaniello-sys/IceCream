@@ -99,6 +99,7 @@
             <option>Frozen Yogurt</option>
             <option>Gelato</option>
           </select>
+          <button class="btn btn-sm" id="reapply-mode" type="button">🔄 Réappliquer</button>
         </div>
       </section>
     </div>
@@ -214,6 +215,7 @@
         <div class="card-header-row">
           <h2 class="card-title">Base de données des ingrédients</h2>
           <div class="journal-actions">
+            <button class="btn btn-sm" id="add-ingredient-db">+ Nouvel ingrédient</button>
             <button class="btn btn-sm" id="reset-ingredients">Réinitialiser</button>
           </div>
         </div>
