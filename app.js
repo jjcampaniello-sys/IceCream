@@ -214,14 +214,63 @@ function calcTotals(lines) {
   };
 }
 
-function evaluateFat(fatPct) {
+// Parse a target range string like "3-8%" into { min: 0.03, max: 0.08 }
+function parsePercentRange(str) {
+  const cleaned = String(str).replace('%', '').trim();
+  const parts = cleaned.split('-').map(s => parseFloat(s.trim()));
+  return { min: parts[0] / 100, max: parts[1] / 100 };
+}
+
+// Look up the MG/sucre target ranges for a given mode name (from MODES array)
+function getModeTargets(modeName) {
+  const m = MODES.find(x => x.mode === modeName);
+  if (!m) return null;
+  return {
+    fat: parsePercentRange(m.mg),
+    sugar: parsePercentRange(m.sugar),
+  };
+}
+
+// Generic evaluator: below range = warn/bad, within range = good, above range = warn/bad
+function evaluateAgainstRange(value, min, max, lowLabel, goodLabel, highLabel) {
+  const span = max - min;
+  if (value < min) {
+    const deficit = min - value;
+    return { text: lowLabel, level: deficit > span ? 'bad' : 'warn' };
+  }
+  if (value > max) {
+    const excess = value - max;
+    return { text: highLabel, level: excess > span ? 'bad' : 'warn' };
+  }
+  return { text: goodLabel, level: 'good' };
+}
+
+function evaluateFat(fatPct, target) {
+  if (target && target.fat) {
+    return evaluateAgainstRange(
+      fatPct, target.fat.min, target.fat.max,
+      "Trop faible pour ce mode — risque de cristaux",
+      "Optimal pour ce mode",
+      "Trop élevé pour ce mode — risque de trop gras"
+    );
+  }
+  // Repli générique si aucun mode n'est sélectionné
   if (fatPct < 0.05) return { text: "Faible — texture légère, risque de cristaux", level: 'warn' };
   if (fatPct < 0.12) return { text: "Moyen — bon équilibre", level: 'good' };
   if (fatPct < 0.20) return { text: "Élevé — texture riche", level: 'good' };
   return { text: "Très élevé — risque de trop gras", level: 'warn' };
 }
 
-function evaluateSugar(sugarPct) {
+function evaluateSugar(sugarPct, target) {
+  if (target && target.sugar) {
+    return evaluateAgainstRange(
+      sugarPct, target.sugar.min, target.sugar.max,
+      "Trop faible pour ce mode — risque de texture dure",
+      "Optimal pour ce mode",
+      "Trop élevé pour ce mode — risque de trop mou"
+    );
+  }
+  // Repli générique si aucun mode n'est sélectionné
   if (sugarPct < 0.12) return { text: "Faible — risque de texture dure", level: 'bad' };
   if (sugarPct < 0.22) return { text: "Optimal — bon équilibre", level: 'good' };
   if (sugarPct < 0.30) return { text: "Élevé — risque de trop mou", level: 'warn' };
@@ -242,6 +291,7 @@ function recommendMode(dairyPct, fatPct, sugarPct) {
   if (fatPct < 0.18) return 'ICE CREAM';
   return 'ICE CREAM (riche)';
 }
+
 // ============================================================================
 // FORMATAGE
 // ============================================================================
@@ -343,13 +393,24 @@ function renderAnalysis(totals) {
 }
 
 function renderEvaluations(totals) {
-  const fatEval = evaluateFat(totals.fatPct);
-  const sugarEval = evaluateSugar(totals.sugarPct);
+  const modeSelect = document.getElementById('mode-select-input');
+  const selectedMode = modeSelect ? modeSelect.value : null;
+  const target = selectedMode ? getModeTargets(selectedMode) : null;
+
+  const fatEval = evaluateFat(totals.fatPct, target);
+  const sugarEval = evaluateSugar(totals.sugarPct, target);
   const fruitEval = evaluateFruit(totals.fruitPct);
 
+  const fatTargetText = target
+    ? `Cible ${selectedMode}: ${Math.round(target.fat.min * 100)}-${Math.round(target.fat.max * 100)}% MG`
+    : 'Cible: 5-15% glace, <5% sorbet';
+  const sugarTargetText = target
+    ? `Cible ${selectedMode}: ${Math.round(target.sugar.min * 100)}-${Math.round(target.sugar.max * 100)}% sucre éq.`
+    : 'Cible: 15-25% (baisse le point de congélation)';
+
   const evals = [
-    { label: 'Matière grasse', value: fatEval.text, level: fatEval.level, target: 'Cible: 5-15% glace, <5% sorbet' },
-    { label: 'Sucre équivalent', value: sugarEval.text, level: sugarEval.level, target: 'Cible: 15-25% (baisse le point de congélation)' },
+    { label: 'Matière grasse', value: fatEval.text, level: fatEval.level, target: fatTargetText },
+    { label: 'Sucre équivalent', value: sugarEval.text, level: sugarEval.level, target: sugarTargetText },
     { label: 'Part de fruits', value: fruitEval.text, level: fruitEval.level, target: 'Détermine glace vs sorbet' },
   ];
 
@@ -633,6 +694,7 @@ function setupActions() {
     modeSelect.value = savedMode;
     modeSelect.addEventListener('change', () => {
       saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
+      renderSimulator();
     });
   }
 
@@ -792,4 +854,3 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
