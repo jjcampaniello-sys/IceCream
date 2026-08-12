@@ -1,432 +1,1068 @@
-/* ==========================================================================
-   SIMULATEUR NINJA CREAMI - APP.JS (VERSION COMPLÈTE RESTAURÉE)
-   ========================================================================== */
+// ============================================================================
+// SIMULATEUR DE RECETTES NINJA CREAMI
+// Application web vanilla JS — fonctionnelle sur GitHub Pages
+// ============================================================================
 
-const STORAGE_KEYS = {
-  recipe: 'creami_recipe',
-  mode: 'creami_mode',
-  journal: 'creami_journal',
-  ingredients: 'creami_ingredients'
-};
+'use strict';
 
+// ============================================================================
+// BASE DE DONNÉES DES INGRÉDIENTS (modifiable, persistée dans localStorage)
+// Sources: CIQUAL/ANSES, USDA FoodData Central
+// ============================================================================
 const DEFAULT_INGREDIENTS = [
-  { name: 'Lait entier 3.5%', category: 'Produits laitiers', water: 88, fat: 3.5, protein: 3.2, carbs: 4.8, sweetness: 15, kcal: 64, fiber: 0, notes: 'Base classique' },
-  { name: 'Lait demi-écrémé', category: 'Produits laitiers', water: 90, fat: 1.5, protein: 3.3, carbs: 4.9, sweetness: 15, kcal: 46, fiber: 0, notes: 'Base allégée' },
-  { name: 'Crème entière 30%', category: 'Produits laitiers', water: 63, fat: 30, protein: 2.3, carbs: 3.2, sweetness: 10, kcal: 292, fiber: 0, notes: 'Onctuosité' },
-  { name: 'Crème liquide 15%', category: 'Produits laitiers', water: 76, fat: 15, protein: 2.8, carbs: 4, sweetness: 10, kcal: 161, fiber: 0, notes: 'Équilibre moyen' },
-  { name: 'Mascarpone', category: 'Produits laitiers', water: 45, fat: 40, protein: 4.5, carbs: 3, sweetness: 10, kcal: 395, fiber: 0, notes: 'Enrichit gelato' },
-  { name: 'Fromage blanc 0%', category: 'Produits laitiers', water: 87, fat: 0.2, protein: 8, carbs: 3.8, sweetness: 10, kcal: 49, fiber: 0, notes: 'Riche en protéines' },
-  { name: 'Yaourt nature 0%', category: 'Produits laitiers', water: 89, fat: 0.1, protein: 4, carbs: 4.5, sweetness: 10, kcal: 35, fiber: 0, notes: 'Base Frozen Yogurt' },
-  { name: 'Yaourt grec 10%', category: 'Produits laitiers', water: 79, fat: 10, protein: 3.5, carbs: 3.8, sweetness: 10, kcal: 120, fiber: 0, notes: 'Onctueux et acide' },
-  { name: 'Sucre blanc', category: 'Sucres', water: 0, fat: 0, protein: 0, carbs: 100, sweetness: 100, kcal: 400, fiber: 0, notes: 'Sucrose standard' },
-  { name: 'Miel', category: 'Sucres', water: 18, fat: 0, protein: 0.3, carbs: 82, sweetness: 130, kcal: 304, fiber: 0, notes: 'Anti-gel fort' },
-  { name: 'Sirop d\'agave', category: 'Sucres', water: 22, fat: 0, protein: 0, carbs: 76, sweetness: 140, kcal: 310, fiber: 0, notes: 'Pouvoir sucrant élevé' },
-  { name: 'Erythritol', category: 'Édulcorants', water: 0, fat: 0, protein: 0, carbs: 100, sweetness: 70, kcal: 0, fiber: 0, notes: '0 kcal' },
-  { name: 'Banane', category: 'Fruits', water: 75, fat: 0.3, protein: 1.1, carbs: 20, sweetness: 35, kcal: 89, fiber: 2.6, notes: 'Texture et liant' },
-  { name: 'Fraise / Fruits rouges', category: 'Fruits', water: 88, fat: 0.4, protein: 0.8, carbs: 7, sweetness: 20, kcal: 33, fiber: 2, notes: 'Base sorbet' },
-  { name: 'Mangue', category: 'Fruits', water: 83, fat: 0.4, protein: 0.8, carbs: 15, sweetness: 40, kcal: 60, fiber: 1.6, notes: 'Riche en pectine' }
+  { name: "Pêche (fraîche)",        category: "Fruit",      water: 0.89, fat: 0.003, protein: 0.01,  carbs: 0.09, sweetness: 0.50, kcal: 39,  fiber: 0.015, notes: "Riche en eau, bien mûre pour plus de sucre" },
+  { name: "Abricot (frais)",        category: "Fruit",      water: 0.86, fat: 0.001, protein: 0.015, carbs: 0.11, sweetness: 0.60, kcal: 48,  fiber: 0.02,  notes: "Plus sucré que la pêche" },
+  { name: "Fraise (fraîche)",       category: "Fruit",      water: 0.91, fat: 0.003, protein: 0.007, carbs: 0.06, sweetness: 0.35, kcal: 32,  fiber: 0.02,  notes: "Très riche en eau, réduire le liquide ajouté" },
+  { name: "Mangue (fraîche)",       category: "Fruit",      water: 0.84, fat: 0.004, protein: 0.008, carbs: 0.14, sweetness: 0.75, kcal: 60,  fiber: 0.017, notes: "Excellent pour sorbet, naturellement sucré" },
+  { name: "Framboise (fraîche)",    category: "Fruit",      water: 0.86, fat: 0.005, protein: 0.012, carbs: 0.12, sweetness: 0.55, kcal: 52,  fiber: 0.025, notes: "Graines peuvent gêner — passer au tamis" },
+  { name: "Banane (mûre)",          category: "Fruit",      water: 0.75, fat: 0.003, protein: 0.011, carbs: 0.22, sweetness: 1.10, kcal: 89,  fiber: 0.026, notes: "Très sucrée, bonne base texturante" },
+  { name: "Myrtille (fraîche)",     category: "Fruit",      water: 0.84, fat: 0.005, protein: 0.007, carbs: 0.14, sweetness: 0.65, kcal: 57,  fiber: 0.024, notes: "Peut être acide — ajuster le sucre" },
+  { name: "Fromage blanc 0%",       category: "Laitier",    water: 0.90, fat: 0.00,  protein: 0.08,  carbs: 0.04, sweetness: 0.10, kcal: 35,  fiber: 0.0,   notes: "Faible MG, ajouter stabilisant pour texture" },
+  { name: "Fromage blanc 20%",      category: "Laitier",    water: 0.82, fat: 0.04,  protein: 0.07,  carbs: 0.04, sweetness: 0.10, kcal: 55,  fiber: 0.0,   notes: "Bon compromis texture/légèreté" },
+  { name: "Fromage blanc 40%",      category: "Laitier",    water: 0.78, fat: 0.08,  protein: 0.07,  carbs: 0.04, sweetness: 0.10, kcal: 75,  fiber: 0.0,   notes: "Riche, bonne base pour glace crémeuse" },
+  { name: "Yaourt grec (10% MG)",   category: "Laitier",    water: 0.82, fat: 0.10,  protein: 0.09,  carbs: 0.04, sweetness: 0.10, kcal: 97,  fiber: 0.0,   notes: "Riche en protéines, texture épaisse" },
+  { name: "Crème 30%",              category: "Laitier",    water: 0.62, fat: 0.30,  protein: 0.025, carbs: 0.03, sweetness: 0.05, kcal: 290, fiber: 0.0,   notes: "Onctuosité, limite les cristaux" },
+  { name: "Crème 35%",              category: "Laitier",    water: 0.57, fat: 0.35,  protein: 0.025, carbs: 0.03, sweetness: 0.05, kcal: 340, fiber: 0.0,   notes: "MG maximale, texture très riche" },
+  { name: "Lait entier",            category: "Laitier",    water: 0.87, fat: 0.035, protein: 0.034, carbs: 0.048,sweetness: 0.10, kcal: 61,  fiber: 0.0,   notes: "Base liquide polyvalente" },
+  { name: "Lait demi-écrémé",       category: "Laitier",    water: 0.89, fat: 0.015, protein: 0.033, carbs: 0.05, sweetness: 0.10, kcal: 46,  fiber: 0.0,   notes: "Base légère, augmenter la MG pour glace" },
+  { name: "Sucre blanc",            category: "Sucre",     water: 0.0,  fat: 0.0,   protein: 0.0,   carbs: 1.0,  sweetness: 1.00, kcal: 387, fiber: 0.0,   notes: "Référence: pouvoir sucrant = 1.0" },
+  { name: "Sucre roux",             category: "Sucre",     water: 0.02, fat: 0.0,   protein: 0.0,   carbs: 0.97, sweetness: 0.95, kcal: 380, fiber: 0.0,   notes: "Goût de mélasse, légèrement moins sucré" },
+  { name: "Miel",                   category: "Sucre",     water: 0.18, fat: 0.0,   protein: 0.003, carbs: 0.82, sweetness: 1.20, kcal: 304, fiber: 0.0,   notes: "Plus sucré que le sucre, abaisse le point de congélation" },
+  { name: "Sirop d'agave",          category: "Sucre",     water: 0.24, fat: 0.0,   protein: 0.0,   carbs: 0.76, sweetness: 1.35, kcal: 310, fiber: 0.0,   notes: "Très sucré, IG bas, liquide à température ambiante" },
+  { name: "Sirop d'érable",         category: "Sucre",     water: 0.32, fat: 0.0,   protein: 0.0,   carbs: 0.67, sweetness: 1.10, kcal: 260, fiber: 0.0,   notes: "Goût distinct, moins sucré que le sucre" },
+  { name: "Allulose",               category: "Sucre",     water: 0.05, fat: 0.0,   protein: 0.0,   carbs: 0.95, sweetness: 0.70, kcal: 1.5, fiber: 0.0,   notes: "Très basse calorie, ne cristallise pas en gelant" },
+  { name: "Erythritol",             category: "Sucre",     water: 0.0,  fat: 0.0,   protein: 0.0,   carbs: 1.0,  sweetness: 0.70, kcal: 0,   fiber: 0.0,   notes: "Zéro calorie, peut cristalliser — mélanger avec du lait" },
+  { name: "Gomme xanthane",         category: "Stabilisant",water: 0.10, fat: 0.0, protein: 0.0,   carbs: 0.90, sweetness: 0.0,  kcal: 280, fiber: 0.80,  notes: "1/4 c. à thé par pint, absorbe l'excès d'eau" },
+  { name: "Poudre à pâte (pudding)",category: "Stabilisant",water: 0.05, fat: 0.02,protein: 0.03,  carbs: 0.85, sweetness: 0.30, kcal: 350, fiber: 0.0,   notes: "1 c. à soupe par pint, épaissit et stabilise" },
+  { name: "Cacao en poudre",        category: "Arôme",      water: 0.03, fat: 0.14,  protein: 0.20,  carbs: 0.58, sweetness: 0.0,  kcal: 228, fiber: 0.33,  notes: "Amer, ajoute corps et couleur. Combiner avec sucre" },
+  { name: "Café (espresso liquide)",category: "Arôme",      water: 0.99, fat: 0.0,   protein: 0.001, carbs: 0.0,  sweetness: 0.0,  kcal: 2,   fiber: 0.0,   notes: "Arôme intense. Remplacer une partie du liquide par l'espresso" },
+  { name: "Citron (jus frais)",     category: "Fruit",      water: 0.92, fat: 0.001, protein: 0.005, carbs: 0.06, sweetness: 0.15, kcal: 22,  fiber: 0.0,   notes: "Acide, idéal pour sorbet. Équilibrer avec plus de sucre" },
+  { name: "Pistache (purée)",       category: "Arôme",      water: 0.05, fat: 0.50,  protein: 0.20,  carbs: 0.20, sweetness: 0.08, kcal: 580, fiber: 0.10,  notes: "MG élevée, texture riche. Purée de pistache idéale pour glace" },
+
+  // --- Fruits supplémentaires ---
+  { name: "Melon",                  category: "Fruit",      water: 0.90, fat: 0.002, protein: 0.008, carbs: 0.08, sweetness: 0.45, kcal: 34,  fiber: 0.009, notes: "Très riche en eau, sorbet léger et rafraîchissant" },
+  { name: "Ananas (frais)",         category: "Fruit",      water: 0.86, fat: 0.001, protein: 0.005, carbs: 0.13, sweetness: 0.55, kcal: 50,  fiber: 0.014, notes: "Acidulé, bon équilibre sucre/acidité pour sorbet" },
+  { name: "Pomme",                  category: "Fruit",      water: 0.86, fat: 0.002, protein: 0.003, carbs: 0.14, sweetness: 0.45, kcal: 52,  fiber: 0.024, notes: "Mixer finement pour éviter la texture granuleuse" },
+  { name: "Poire",                  category: "Fruit",      water: 0.84, fat: 0.001, protein: 0.004, carbs: 0.15, sweetness: 0.50, kcal: 57,  fiber: 0.031, notes: "Texture fine une fois mixée, sorbet doux" },
+  { name: "Cerise (dénoyautée)",    category: "Fruit",      water: 0.82, fat: 0.003, protein: 0.011, carbs: 0.16, sweetness: 0.55, kcal: 63,  fiber: 0.021, notes: "Dénoyauter avant congélation" },
+  { name: "Pastèque",               category: "Fruit",      water: 0.91, fat: 0.002, protein: 0.006, carbs: 0.08, sweetness: 0.50, kcal: 30,  fiber: 0.004, notes: "Extrêmement riche en eau, réduire fortement le liquide ajouté" },
+  { name: "Kiwi",                   category: "Fruit",      water: 0.83, fat: 0.005, protein: 0.011, carbs: 0.15, sweetness: 0.45, kcal: 61,  fiber: 0.03,  notes: "Passer au tamis pour retirer les graines si besoin" },
+  { name: "Orange",                 category: "Fruit",      water: 0.87, fat: 0.001, protein: 0.009, carbs: 0.12, sweetness: 0.40, kcal: 47,  fiber: 0.021, notes: "Sorbet classique, ajouter le zeste pour l'arôme" },
+  { name: "Pamplemousse",           category: "Fruit",      water: 0.90, fat: 0.001, protein: 0.008, carbs: 0.08, sweetness: 0.20, kcal: 33,  fiber: 0.011, notes: "Acide, augmenter le sucre pour équilibrer" },
+  { name: "Cassis",                 category: "Fruit",      water: 0.82, fat: 0.004, protein: 0.014, carbs: 0.13, sweetness: 0.40, kcal: 63,  fiber: 0.043, notes: "Très acidulé et parfumé, sorbet intense" },
+  { name: "Rhubarbe (cuite)",       category: "Fruit",      water: 0.88, fat: 0.001, protein: 0.009, carbs: 0.09, sweetness: 0.25, kcal: 35,  fiber: 0.018, notes: "Toujours cuite au préalable, très acide crue" },
+  { name: "Noix de coco (pulpe)",   category: "Fruit",      water: 0.47, fat: 0.33,  protein: 0.033, carbs: 0.15, sweetness: 0.15, kcal: 354, fiber: 0.09,  notes: "Très riche en MG, base pour glace coco onctueuse" },
+  { name: "Avocat",                 category: "Fruit",      water: 0.73, fat: 0.15,  protein: 0.02,  carbs: 0.09, sweetness: 0.05, kcal: 160, fiber: 0.067, notes: "Base crémeuse végétale, équilibrer avec citron et sucre" },
+  { name: "Fruit de la passion",    category: "Fruit",      water: 0.73, fat: 0.004, protein: 0.02,  carbs: 0.23, sweetness: 0.55, kcal: 97,  fiber: 0.107, notes: "Très parfumé, passer au tamis pour retirer les graines" },
+
+  // --- Laitiers supplémentaires ---
+  { name: "Lait écrémé",            category: "Laitier",    water: 0.91, fat: 0.001, protein: 0.034, carbs: 0.05, sweetness: 0.10, kcal: 34,  fiber: 0.0,   notes: "Base très légère, augmenter la MG pour éviter les cristaux" },
+  { name: "Lait concentré non sucré",category: "Laitier",   water: 0.74, fat: 0.075, protein: 0.067, carbs: 0.10, sweetness: 0.10, kcal: 134, fiber: 0.0,   notes: "Riche en extrait sec, améliore la texture sans trop de MG" },
+  { name: "Lait concentré sucré",   category: "Laitier",    water: 0.27, fat: 0.085, protein: 0.076, carbs: 0.55, sweetness: 0.60, kcal: 321, fiber: 0.0,   notes: "Très sucré et épais, réduire le sucre ajouté ailleurs" },
+  { name: "Mascarpone",             category: "Laitier",    water: 0.47, fat: 0.44,  protein: 0.035, carbs: 0.03, sweetness: 0.05, kcal: 429, fiber: 0.0,   notes: "Très riche en MG, texture ultra onctueuse en petite quantité" },
+  { name: "Crème fraîche épaisse",  category: "Laitier",    water: 0.63, fat: 0.30,  protein: 0.023, carbs: 0.03, sweetness: 0.05, kcal: 292, fiber: 0.0,   notes: "Légèrement acidulée, équivalent à la crème liquide 30%" },
+  { name: "Beurre",                 category: "Laitier",    water: 0.16, fat: 0.82,  protein: 0.007, carbs: 0.006,sweetness: 0.0,  kcal: 717, fiber: 0.0,   notes: "Très riche en MG, utiliser en petite quantité" },
+  { name: "Lait de coco (boîte)",   category: "Laitier",    water: 0.68, fat: 0.24,  protein: 0.023, carbs: 0.06, sweetness: 0.10, kcal: 230, fiber: 0.02,  notes: "Alternative végétale riche en MG, idéale pour glace coco" },
+
+  // --- Sucrants supplémentaires ---
+  { name: "Sirop de glucose",       category: "Sucre",      water: 0.20, fat: 0.0,   protein: 0.0,   carbs: 0.80, sweetness: 0.70, kcal: 316, fiber: 0.0,   notes: "Limite fortement la cristallisation, texture souple même très froid" },
+  { name: "Sucre de coco",          category: "Sucre",      water: 0.02, fat: 0.0,   protein: 0.002, carbs: 0.94, sweetness: 0.75, kcal: 375, fiber: 0.0,   notes: "Goût caramel léger, un peu moins sucrant que le sucre blanc" },
+  { name: "Stevia (poudre pure)",   category: "Sucre",      water: 0.0,  fat: 0.0,   protein: 0.0,   carbs: 1.0,  sweetness: 250,  kcal: 0,   fiber: 0.0,   notes: "Extrêmement concentré: quelques g suffisent, n'apporte pas de corps" },
+
+  // --- Additifs / stabilisants supplémentaires ---
+  { name: "Poudre de lait écrémé",  category: "Stabilisant",water: 0.03, fat: 0.008, protein: 0.34,  carbs: 0.52, sweetness: 0.15, kcal: 362, fiber: 0.0,   notes: "1-2 c. à soupe par pint, augmente l'extrait sec sans ajouter de MG" },
+  { name: "Gélatine",               category: "Stabilisant",water: 0.13, fat: 0.005, protein: 0.85,  carbs: 0.0,  sweetness: 0.0,  kcal: 335, fiber: 0.0,   notes: "1-2g par pint, hydrater puis dissoudre à chaud avant d'incorporer" },
+  { name: "Gomme de guar",          category: "Stabilisant",water: 0.10, fat: 0.005, protein: 0.04,  carbs: 0.80, sweetness: 0.0,  kcal: 356, fiber: 0.75,  notes: "Alternative à la gomme xanthane, 1/8 c. à thé par pint" },
+  { name: "Blanc d'œuf",            category: "Stabilisant",water: 0.88, fat: 0.0002,protein: 0.11,  carbs: 0.007,sweetness: 0.0,  kcal: 52,  fiber: 0.0,   notes: "Stabilise et allège la texture, monter en neige avant d'incorporer" },
+  { name: "Jaune d'œuf",            category: "Stabilisant",water: 0.50, fat: 0.27,  protein: 0.16,  carbs: 0.036,sweetness: 0.0,  kcal: 322, fiber: 0.0,   notes: "Base de crème anglaise, onctuosité classique des glaces traditionnelles" },
+  { name: "Lécithine de soja",      category: "Stabilisant",water: 0.01, fat: 0.98,  protein: 0.0,   carbs: 0.0,  sweetness: 0.0,  kcal: 763, fiber: 0.0,   notes: "Émulsifiant, 1/2 c. à thé par pint pour une texture plus lisse" },
+
+  // --- Arômes / mix-ins supplémentaires ---
+  { name: "Beurre de cacahuète",    category: "Arôme",      water: 0.02, fat: 0.50,  protein: 0.25,  carbs: 0.20, sweetness: 0.10, kcal: 588, fiber: 0.06,  notes: "Mix-in ou base, très riche en MG et protéines" },
+  { name: "Chocolat noir (70%)",    category: "Arôme",      water: 0.01, fat: 0.43,  protein: 0.08,  carbs: 0.45, sweetness: 0.35, kcal: 598, fiber: 0.11,  notes: "Faire fondre avant d'incorporer pour éviter les grumeaux" },
+  { name: "Extrait de vanille",     category: "Arôme",      water: 0.53, fat: 0.0006,protein: 0.0006,carbs: 0.13, sweetness: 0.0,  kcal: 288, fiber: 0.0,   notes: "Arôme pur, quantité minime, n'influence pas la texture" },
+  { name: "Noix de macadamia",      category: "Arôme",      water: 0.015,fat: 0.76,  protein: 0.079, carbs: 0.14, sweetness: 0.02, kcal: 718, fiber: 0.086, notes: "Très riche en MG, mix-in ou base pour glace ultra crémeuse" },
 ];
 
-const DEFAULT_TROUBLESHOOT = [
-  { symptom: 'Sableux / Fritable (Crumble)', cause: 'Manque de matière grasse ou de sucre (mélange trop dur)', fix: 'Ajouter un Re-spin avec 1 à 2 c.à.s de liquide (lait, crème)', future: 'Augmenter la crème ou le sucre dans le mix de base' },
-  { symptom: 'Trop dur / Impossible à cuillérer', cause: 'Exces d\'eau ou manque d\'agents anti-gel (sucre, alcool)', fix: 'Laisser réchauffer 5-10 min à température ambiante', future: 'Ajouter du sucre, du miel ou du sirop d\'agave' },
-  { symptom: 'Gommeux / Trop collant', cause: 'Excès de gomme (xanthane, guar) ou trop de protéines', fix: 'Mélanger avec un peu de lait froid', future: 'Réduire les stabilisants à moins de 1g par bol' },
-  { symptom: 'Pellicule glacée sur les bords', cause: 'Froid extrême du bol Ninja Creami', fix: 'Gratter les bords avec une cuillère après le 1er spin', future: 'Passer le bol sous l\'eau tiède 30s avant de spiner' }
+// ============================================================================
+// DONNÉES DE DÉPANNAGE TEXTURE
+// ============================================================================
+const TROUBLESHOOT = [
+  { symptom: "Texture sableuse / poudreuse",
+    cause: "Base trop sèche, manque de liquide ou de matière grasse. Premier cycle uniquement.",
+    fixNow: "Creuser un puits au centre, ajouter 1-2 c. à soupe de liquide (lait, crème ou eau), puis Re-spin.",
+    fixNext: "Augmenter le liquide de 2-4 c. à soupe, ajouter 1 c. à soupe de matière grasse (crème, beurre de noix)." },
+  { symptom: "Texture glacée / dure (cristaux)",
+    cause: "Trop d'eau, pas assez de matière grasse ou de sucre. Fruit trop aqueux.",
+    fixNow: "Ajouter 1 c. à soupe de crème ou fromage blanc, puis Re-spin.",
+    fixNext: "Réduire l'eau/jus, augmenter la MG ou le sucre, ajouter un stabilisant (gomme xanthane 1/4 c. à thé)." },
+  { symptom: "Texture trop molle / liquide",
+    cause: "Trop de sucre (baisse le point de congélation) ou trop de liquide.",
+    fixNow: "Remettre au congélateur 2-4h, puis re-spiner.",
+    fixNext: "Réduire le sucre équivalent sous 25%, réduire le liquide, augmenter l'extrait sec." },
+  { symptom: "Texture trop grasse / lourde",
+    cause: "Excès de crème ou de matière grasse (>20%).",
+    fixNow: "Ajouter 1-2 c. à soupe de lait ou jus de fruit, puis Re-spin.",
+    fixNext: "Remplacer une partie de la crème par du fromage blanc ou du lait." },
+  { symptom: "Texture granuleuse / chalky",
+    cause: "Protéine mal hydratée ou ratio protéine/liquide déséquilibré.",
+    fixNow: "Ajouter 1 c. à soupe de crème ou fromage blanc, puis Re-spin.",
+    fixNext: "Hydrater la poudre 30 min avant congélation, utiliser un mélange whey-caséine, ajouter 1/4 c. à thé de gomme xanthane." },
+  { symptom: "Texture inégale (bordures dures)",
+    cause: "Contenant congelé en biais, congélation inégale.",
+    fixNow: "Laisser reposer 5-10 min à température ambiante, racler les bords, puis Re-spin.",
+    fixNext: "Congeler toujours à plat et niveau pendant 24h minimum." },
+  { symptom: "Ne spin pas du tout (trop dur)",
+    cause: "Pas assez congelé (<24h) ou congélateur trop froid.",
+    fixNow: "Laisser reposer 10 min sur le comptoir, puis retenter.",
+    fixNext: "Congeler au moins 24h à plat. Température cible: -22 à -13°C." },
 ];
 
-const DEFAULT_TIPS = [
-  '<strong>Eau (60-70%) :</strong> L\'élément le plus abondant. Trop d\'eau crée une texture pailletée de glace.',
-  '<strong>Matière Grasse (5-15%) :</strong> Donne l\'onctuosité et le nappe en bouche. Trop peu rend la glace cassante.',
-  '<strong>Équivalent Sucre (12-20%) :</strong> Abaisser le point de congélation pour éviter un bloc de glace massif.',
-  '<strong>Extrait Sec (30-40%) :</strong> Tout ce qui n\'est pas de l\'eau. Garantit une structure solide mais crémeuse.'
+// ============================================================================
+// CONSEILS PRO
+// ============================================================================
+const TIPS = [
+  "L'eau gèle en cristaux: trop d'eau = texture dure. La matière grasse et le sucre empêchent la formation de gros cristaux.",
+  "Le sucre abaisse le point de congélation: un batch trop sucré ne gèlera pas correctement et restera mou.",
+  "La matière grasse enrobe les cristaux de glace: elle crée une texture lisse et onctueuse en empêchant les cristaux de fusionner.",
+  "L'extrait sec (protéines, fibres, minéraux) donne du corps à la préparation. Plus d'extrait sec = texture plus dense.",
+  "La gomme xanthane (1/4 c. à thé par pint) stabilise la texture en absorbant l'excès d'eau et réduit le nombre de re-spins nécessaires.",
+  "Pour les sorbets (sans lait), viser 20-25% de sucre équivalent pour éviter une texture trop dure.",
+  "Pour les glaces légères (Lite Ice Cream), un apport minimal en matière grasse (3-5%) suffit pour une texture agréable.",
+  "Pour les glaces riches (Ice Cream), viser 10-18% de matière grasse pour une texture crémeuse optimale.",
+  "Le re-spin est normal après le premier cycle, surtout pour les bases faibles en MG ou en sucre. Ne pas hésiter à l'utiliser.",
+  "Toujours ajuster par petites quantités: on peut ajouter du liquide, mais pas en retirer. Commencer par 1 c. à soupe.",
 ];
 
-const DEFAULT_MODES_INFO = [
-  { mode: 'Lite Ice Cream', desc: 'Pour recettes allégées en sucre et en gras.', fat: '3 - 6%', sugar: '10 - 14%' },
-  { mode: 'Ice Cream', desc: 'Pour glaces traditionnelles équilibrées.', fat: '8 - 12%', sugar: '14 - 18%' },
-  { mode: 'Gelato', desc: 'Glace dense à forte teneur en matière grasse.', fat: '10 - 16%', sugar: '16 - 20%' },
-  { mode: 'Sorbet', desc: 'Mix de fruits et eau sans aucune matière grasse.', fat: '0 - 2%', sugar: '15 - 22%' },
-  { mode: 'Frozen Yogurt', desc: 'Base de yaourt nature ou grec, légèrement sucrée.', fat: '1 - 6%', sugar: '12 - 16%' }
+// ============================================================================
+// DONNÉES DES MODES
+// ============================================================================
+const MODES = [
+  { mode: "Lite Ice Cream", desc: "Pour les bases légères, faibles en MG ou en sucre. Idéal pour les protéines en poudre, laits végétaux, recettes basses calories. Premier cycle souvent poudreux — re-spin presque toujours nécessaire.", mg: "3-8%", sugar: "10-18%" },
+  { mode: "Ice Cream",      desc: "Pour les bases riches en matière grasse et sucre. Produit une texture dense et crémeuse similaire à une glace artisanale. Convient aux recettes avec crème 30%+ et sucre >15%.", mg: "10-20%", sugar: "15-25%" },
+  { mode: "Sorbet",         desc: "Pour les bases exclusivement fruitières sans produits laitiers. Texture plus légère et plus glacée que la glace. Utiliser du fruit frais ou congelé + sucre/jus. Cible: 20-25% de sucre.", mg: "0-3%", sugar: "18-28%" },
+  { mode: "Frozen Yogurt",  desc: "Pour les bases au yaourt ou fromage blanc. Texture intermédiaire entre glace et sorbet. Idéal pour les recettes protéinées et les desserts légers.", mg: "2-8%", sugar: "12-20%" },
+  { mode: "Gelato",         desc: "Mode (modèles Deluxe) pour texture italienne onctueuse, moins aérée que Ice Cream. Base plus riche en sucre et plus faible en MG que la glace classique.", mg: "6-12%", sugar: "18-28%" },
 ];
 
-const DEFAULT_STEPS = [
-  'Préparer et mixer les ingrédients jusqu\'à dissolution complète des sucres.',
-  'Verser dans le bol Ninja Creami jusqu\'à la ligne MAX FILL.',
-  'Placer au congélateur à **-18°C pendant au moins 24 heures** à plat.',
-  'Sélectionner le mode adapté sur la machine (ex: Lite Ice Cream).',
-  'Si la texture est effritée après le 1er passage, ajouter 1 c.à.s de liquide et lancer un **Re-spin**.'
+// Limite de remplissage du pint Ninja Creami (grammes)
+const MAX_BATCH_WEIGHT = 530;
+
+const STEPS = [
+  { title: "Préparation", desc: "Mixer tous les ingrédients au blender jusqu'à obtenir un liquide homogène. Goûter et ajuster le sucre AVANT congélation (le froid réduit la perception du sucré)." },
+  { title: "Remplissage", desc: "Verser dans le pint Creami sans dépasser la ligne de remplissage maximum. Lisser la surface avec une cuillère." },
+  { title: "Congélation", desc: "Congeler à plat et à niveau pendant minimum 24h. Température du congélateur: -22 à -13°C. Ne pas ouvrir le couvercle pendant la congélation." },
+  { title: "Tempérage", desc: "Sortir le pint 5-10 min avant le traitement. S'il y a une bosse au centre, la faire fondre ou racler pour aplanir la surface." },
+  { title: "Premier cycle", desc: "Placer le pint dans le bol externe, verrouiller, sélectionner le mode et lancer. Durée: ~4 minutes." },
+  { title: "Évaluation", desc: "Vérifier la texture. Si poudreux ou sableux (normal pour les bases légères): creuser un puits, ajouter 1-2 c. à soupe de liquide, puis Re-spin." },
+  { title: "Re-spin", desc: "Le re-spin affine les cristaux et réincorpore l'humidité. Répéter si nécessaire (max 2-3 fois) en ajoutant un peu de liquide à chaque fois." },
+  { title: "Mix-in (optionnel)", desc: "Après obtention de la texture souhaitée, creuser un trou au centre, ajouter les mix-ins (fruits, noix, chocolat), puis lancer le cycle Mix-in." },
+  { title: "Service", desc: "Servir immédiatement. La glace Creami est meilleure fraîchement spinée. Ne pas recongeler après traitement (texture dégradée)." },
 ];
 
-// État local
-let ingredientsDB = loadFromStorage(STORAGE_KEYS.ingredients, DEFAULT_INGREDIENTS);
-let recipeLines = loadFromStorage(STORAGE_KEYS.recipe, [
-  { name: 'Lait entier 3.5%', grams: 250 },
-  { name: 'Crème entière 30%', grams: 100 },
-  { name: 'Sucre blanc', grams: 40 }
-]);
-let journal = loadFromStorage(STORAGE_KEYS.journal, []);
+// ============================================================================
+// ÉTAT DE L'APPLICATION
+// ============================================================================
+let ingredientsDB = [];
+let recipeLines = [];
+let journal = [];
+
+// ============================================================================
+// PERSISTANCE (localStorage)
+// ============================================================================
+function getStorage() {
+  try {
+    if (window.localStorage) return window.localStorage;
+  } catch (e) {}
+  return null;
+}
+
+const _memStore = {};
 
 function loadFromStorage(key, fallback) {
   try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : fallback;
+    const s = getStorage();
+    if (s) {
+      const data = s.getItem(key);
+      if (data) return JSON.parse(data);
+    }
+    return _memStore[key] !== undefined ? _memStore[key] : fallback;
   } catch (e) {
     return fallback;
   }
 }
 
-function saveToStorage(key, val) {
+function saveToStorage(key, data) {
   try {
-    localStorage.setItem(key, JSON.stringify(val));
-  } catch (e) {}
+    const s = getStorage();
+    if (s) {
+      s.setItem(key, JSON.stringify(data));
+    } else {
+      _memStore[key] = data;
+    }
+  } catch (e) {
+    _memStore[key] = data;
+  }
 }
 
-// Logique intelligente pour le bouton "Réappliquer"
-function applyModeAdjustment(selectedMode) {
-  if (!Array.isArray(recipeLines)) return;
+const STORAGE_KEYS = {
+  ingredients: 'creami_ingredients_db',
+  recipe: 'creami_recipe',
+  journal: 'creami_journal',
+  mode: 'creami_mode',
+};
 
-  const findInRecipe = (kw) => recipeLines.findIndex(l => l.name.toLowerCase().includes(kw.toLowerCase()));
-  const findInDB = (kw) => ingredientsDB.find(i => i.name.toLowerCase().includes(kw.toLowerCase())) || ingredientsDB[0];
+// ============================================================================
+// AUTO-REMPLISSAGE PAR CATÉGORIE
+// Quand une nouvelle ligne d'ingrédient (encore vierge) reçoit une catégorie
+// qui correspond à une catégorie déjà présente dans la base, on reprend la
+// moyenne des ingrédients existants de cette catégorie pour pré-remplir les
+// valeurs nutritionnelles — dans le même format (fractions décimales) que
+// les éléments prédéfinis.
+// ============================================================================
+const CATEGORY_AVERAGE_FIELDS = ['water', 'fat', 'protein', 'carbs', 'sweetness', 'kcal', 'fiber'];
 
-  switch (selectedMode) {
-    case 'Frozen Yogurt': {
-      let yIdx = findInRecipe('yaourt');
-      if (yIdx === -1) {
-        const dbYogurt = findInDB('yaourt');
-        recipeLines.push({ name: dbYogurt.name, grams: 350 });
-      } else {
-        recipeLines[yIdx].grams = 350;
-      }
-      const cIdx = findInRecipe('crème');
-      if (cIdx !== -1) recipeLines[cIdx].grams = 20;
-      const mIdx = findInRecipe('lait');
-      if (mIdx !== -1) recipeLines[mIdx].grams = 0;
-      break;
-    }
-    case 'Sorbet': {
-      let fIdx = findInRecipe('fraise');
-      if (fIdx === -1) fIdx = findInRecipe('fruit');
-      if (fIdx === -1) fIdx = findInRecipe('mangue');
-      if (fIdx === -1) {
-        const dbFruit = findInDB('fraise') || findInDB('fruit');
-        recipeLines.push({ name: dbFruit.name, grams: 300 });
-      } else {
-        recipeLines[fIdx].grams = 300;
-      }
-      const cIdx = findInRecipe('crème');
-      if (cIdx !== -1) recipeLines[cIdx].grams = 0;
-      const mIdx = findInRecipe('lait');
-      if (mIdx !== -1) recipeLines[mIdx].grams = 0;
-      break;
-    }
-    case 'Ice Cream':
-    case 'Gelato': {
-      let cIdx = findInRecipe('crème');
-      if (cIdx === -1) {
-        recipeLines.push({ name: findInDB('crème').name, grams: 120 });
-      } else {
-        recipeLines[cIdx].grams = 120;
-      }
-      let mIdx = findInRecipe('lait');
-      if (mIdx === -1) {
-        recipeLines.push({ name: findInDB('lait').name, grams: 250 });
-      } else {
-        recipeLines[mIdx].grams = 250;
-      }
-      break;
-    }
-    case 'Lite Ice Cream': {
-      let mIdx = findInRecipe('lait');
-      if (mIdx === -1) {
-        recipeLines.push({ name: findInDB('lait').name, grams: 300 });
-      } else {
-        recipeLines[mIdx].grams = 300;
-      }
-      const cIdx = findInRecipe('crème');
-      if (cIdx !== -1) recipeLines[cIdx].grams = 30;
-      break;
-    }
+function computeCategoryAverages(category, excludeIdx) {
+  const items = ingredientsDB.filter((ing, i) =>
+    i !== excludeIdx && ing.category.trim().toLowerCase() === category.trim().toLowerCase()
+  );
+  if (items.length === 0) return null;
+  const avg = {};
+  CATEGORY_AVERAGE_FIELDS.forEach(f => {
+    const sum = items.reduce((a, ing) => a + (ing[f] || 0), 0);
+    avg[f] = sum / items.length;
+  });
+  return avg;
+}
+
+// ============================================================================
+// FONCTIONS DE CALCUL
+// ============================================================================
+function findIngredient(name) {
+  return ingredientsDB.find(i => i.name === name) || null;
+}
+
+function calcIngredientLine(line) {
+  const ing = findIngredient(line.name);
+  if (!ing) return { water: 0, fat: 0, sugarEquiv: 0, solids: 0, category: '' };
+  const grams = Math.max(0, line.grams || 0);
+  const water = ing.water;
+  const fat = ing.fat;
+  const sugarEquiv = grams * ing.carbs * ing.sweetness;
+  const solids = grams * (1 - water);
+  return { water, fat, sugarEquiv, solids, category: ing.category };
+}
+
+function calcTotals(lines) {
+  let totalWeight = 0, totalWaterPond = 0, totalFatPond = 0, totalSugar = 0, totalSolids = 0;
+  let fruitG = 0, dairyG = 0, sweetenerG = 0;
+
+  for (const line of lines) {
+    const c = calcIngredientLine(line);
+    const g = Math.max(0, line.grams || 0);
+    totalWeight += g;
+    totalWaterPond += g * c.water;
+    totalFatPond += g * c.fat;
+    totalSugar += c.sugarEquiv;
+    totalSolids += c.solids;
+    if (c.category === 'Fruit') fruitG += g;
+    if (c.category === 'Laitier') dairyG += g;
+    if (c.category === 'Sucre') sweetenerG += g;
   }
 
-  recipeLines = recipeLines.filter(l => l.grams > 0);
+  return {
+    totalWeight,
+    waterPct: totalWeight > 0 ? totalWaterPond / totalWeight : 0,
+    fatPct: totalWeight > 0 ? totalFatPond / totalWeight : 0,
+    sugarEquiv: totalSugar,
+    sugarPct: totalWeight > 0 ? totalSugar / totalWeight : 0,
+    solids: totalSolids,
+    solidsPct: totalWeight > 0 ? totalSolids / totalWeight : 0,
+    fruitPct: totalWeight > 0 ? fruitG / totalWeight : 0,
+    dairyPct: totalWeight > 0 ? dairyG / totalWeight : 0,
+    sweetenerPct: totalWeight > 0 ? sweetenerG / totalWeight : 0,
+  };
+}
+
+// Parse a target range string like "3-8%" into { min: 0.03, max: 0.08 }
+function parsePercentRange(str) {
+  const cleaned = String(str).replace('%', '').trim();
+  const parts = cleaned.split('-').map(s => parseFloat(s.trim()));
+  return { min: parts[0] / 100, max: parts[1] / 100 };
+}
+
+// Look up the MG/sucre target ranges for a given mode name (from MODES array)
+function getModeTargets(modeName) {
+  const m = MODES.find(x => x.mode === modeName);
+  if (!m) return null;
+  return {
+    fat: parsePercentRange(m.mg),
+    sugar: parsePercentRange(m.sugar),
+  };
+}
+
+// ============================================================================
+// AJUSTEMENT AUTOMATIQUE DES PROPORTIONS SELON LE MODE CHOISI
+// Ajuste un seul ingrédient "levier" par cible (sucre, MG) pour atteindre le
+// milieu de la plage cible. Si aucun ingrédient de la catégorie requise n'est
+// présent dans la recette, en ajoute un (valeur de référence) et le signale.
+// Ne fait rien si la valeur actuelle est déjà dans la plage cible.
+// ============================================================================
+function adjustLever({ category, valueFn, targetMin, targetMax, preferredName, addedIngredients }) {
+  // Valeur actuelle (avant ajustement)
+  let totalWeight = 0, totalContrib = 0;
+  recipeLines.forEach(line => {
+    const g = Math.max(0, line.grams || 0);
+    totalWeight += g;
+    const ing = findIngredient(line.name);
+    if (ing) totalContrib += g * valueFn(ing);
+  });
+  const currentPct = totalWeight > 0 ? totalContrib / totalWeight : 0;
+  if (currentPct >= targetMin && currentPct <= targetMax) return; // déjà optimal, ne rien toucher
+
+  const targetPctMid = (targetMin + targetMax) / 2;
+
+  // Meilleur levier déjà présent dans la recette (plus forte contribution/gramme)
+  let idx = -1, bestVal = -Infinity;
+  recipeLines.forEach((line, i) => {
+    const ing = findIngredient(line.name);
+    if (ing && ing.category === category) {
+      const v = valueFn(ing);
+      if (v > bestVal) { bestVal = v; idx = i; }
+    }
+  });
+
+  // Sinon, ajouter un ingrédient de référence de cette catégorie
+  if (idx === -1) {
+    let template = findIngredient(preferredName);
+    if (!template) template = ingredientsDB.find(i => i.category === category && valueFn(i) > 0);
+    if (!template) return; // aucun ingrédient disponible dans la base pour cette catégorie
+    recipeLines.push({ name: template.name, grams: 0 });
+    idx = recipeLines.length - 1;
+    addedIngredients.push(template.name);
+  }
+
+  const ing = findIngredient(recipeLines[idx].name);
+  if (!ing) return;
+  const leverValue = valueFn(ing);
+  if (leverValue <= 0) return; // impossible d'ajuster avec cet ingrédient
+
+  let weightOther = 0, contribOther = 0;
+  recipeLines.forEach((line, i) => {
+    if (i === idx) return;
+    const g = Math.max(0, line.grams || 0);
+    weightOther += g;
+    const li = findIngredient(line.name);
+    if (li) contribOther += g * valueFn(li);
+  });
+
+  const denom = leverValue - targetPctMid;
+  if (Math.abs(denom) < 1e-9) return; // évite une division par zéro
+  let X = (targetPctMid * weightOther - contribOther) / denom;
+  X = Math.max(0, Math.round(X));
+
+  // Ne jamais dépasser la limite de remplissage du pint
+  const maxAllowedX = Math.max(0, MAX_BATCH_WEIGHT - weightOther);
+  X = Math.min(X, maxAllowedX);
+
+  recipeLines[idx].grams = X;
+}
+
+function applyModeAdjustment(modeName) {
+  const target = getModeTargets(modeName);
+  if (!target) return;
+
+  const addedIngredients = [];
+
+  adjustLever({
+    category: 'Sucre',
+    valueFn: ing => ing.carbs * ing.sweetness,
+    targetMin: target.sugar.min,
+    targetMax: target.sugar.max,
+    preferredName: 'Sucre blanc',
+    addedIngredients,
+  });
+
+  adjustLever({
+    category: 'Laitier',
+    valueFn: ing => ing.fat,
+    targetMin: target.fat.min,
+    targetMax: target.fat.max,
+    preferredName: 'Crème 30%',
+    addedIngredients,
+  });
+
   saveToStorage(STORAGE_KEYS.recipe, recipeLines);
-}
+  renderSimulator();
 
-// Rendu des jauges de couleur d'évaluation
-function renderEvaluationBar(label, valuePct, minIdeal, maxIdeal) {
-  let statusClass = 'good';
-  let advice = 'Équilibré';
-
-  if (valuePct < minIdeal) {
-    statusClass = 'low';
-    advice = 'Un peu bas';
-  } else if (valuePct > maxIdeal) {
-    statusClass = 'high';
-    advice = 'Un peu élevé';
+  if (addedIngredients.length > 0) {
+    alert(`Ajustement automatique (${modeName}) : ${addedIngredients.join(', ')} ajouté(s) à la recette pour atteindre la cible.`);
   }
-
-  return `
-    <div class="eval-card ${statusClass}">
-      <div class="eval-header">
-        <span class="eval-label">${label}</span>
-        <span class="eval-val">${valuePct.toFixed(1)}%</span>
-      </div>
-      <div class="eval-bar-bg">
-        <div class="eval-bar-fill" style="width: ${Math.min(valuePct * 3, 100)}%;"></div>
-      </div>
-      <div class="eval-status">${advice} (Cible : ${minIdeal}-${maxIdeal}%)</div>
-    </div>
-  `;
 }
 
-function renderSimulator() {
+// Generic evaluator: below range = warn/bad, within range = good, above range = warn/bad
+function evaluateAgainstRange(value, min, max, lowLabel, goodLabel, highLabel) {
+  const span = max - min;
+  if (value < min) {
+    const deficit = min - value;
+    return { text: lowLabel, level: deficit > span ? 'bad' : 'warn' };
+  }
+  if (value > max) {
+    const excess = value - max;
+    return { text: highLabel, level: excess > span ? 'bad' : 'warn' };
+  }
+  return { text: goodLabel, level: 'good' };
+}
+
+function evaluateFat(fatPct, target) {
+  if (target && target.fat) {
+    return evaluateAgainstRange(
+      fatPct, target.fat.min, target.fat.max,
+      "Trop faible pour ce mode — risque de cristaux",
+      "Optimal pour ce mode",
+      "Trop élevé pour ce mode — risque de trop gras"
+    );
+  }
+  // Repli générique si aucun mode n'est sélectionné
+  if (fatPct < 0.05) return { text: "Faible — texture légère, risque de cristaux", level: 'warn' };
+  if (fatPct < 0.12) return { text: "Moyen — bon équilibre", level: 'good' };
+  if (fatPct < 0.20) return { text: "Élevé — texture riche", level: 'good' };
+  return { text: "Très élevé — risque de trop gras", level: 'warn' };
+}
+
+function evaluateSugar(sugarPct, target) {
+  if (target && target.sugar) {
+    return evaluateAgainstRange(
+      sugarPct, target.sugar.min, target.sugar.max,
+      "Trop faible pour ce mode — risque de texture dure",
+      "Optimal pour ce mode",
+      "Trop élevé pour ce mode — risque de trop mou"
+    );
+  }
+  // Repli générique si aucun mode n'est sélectionné
+  if (sugarPct < 0.12) return { text: "Faible — risque de texture dure", level: 'bad' };
+  if (sugarPct < 0.22) return { text: "Optimal — bon équilibre", level: 'good' };
+  if (sugarPct < 0.30) return { text: "Élevé — risque de trop mou", level: 'warn' };
+  return { text: "Très élevé — ne gèlera pas", level: 'bad' };
+}
+
+function evaluateFruit(fruitPct) {
+  if (fruitPct < 0.20) return { text: "Faible — profil glace lacté", level: 'good' };
+  if (fruitPct < 0.40) return { text: "Moyen — glace fruitée", level: 'good' };
+  if (fruitPct < 0.60) return { text: "Élevé — sorbet lacté", level: 'warn' };
+  return { text: "Très élevé — profil sorbet", level: 'warn' };
+}
+
+function evaluateWeight(totalWeight) {
+  if (totalWeight <= MAX_BATCH_WEIGHT) {
+    return { text: `OK — sous la limite du pint (${MAX_BATCH_WEIGHT}g)`, level: 'good' };
+  }
+  const excess = Math.round(totalWeight - MAX_BATCH_WEIGHT);
+  return { text: `Dépasse la limite du pint de ${excess}g — réduire les quantités`, level: 'bad' };
+}
+
+function recommendMode(dairyPct, fatPct, sugarPct) {
+  if (dairyPct < 0.10) return 'SORBET';
+  if (fatPct < 0.08) return 'LITE ICE CREAM';
+  if (fatPct <= 0.12 && sugarPct >= 0.18) return 'GELATO';
+  if (fatPct < 0.18) return 'ICE CREAM';
+  return 'ICE CREAM (riche)';
+}
+
+// ============================================================================
+// FORMATAGE
+// ============================================================================
+function fmt0(n) { return Math.round(n).toLocaleString('fr-FR'); }
+function fmt1(n) { return n.toFixed(1).replace('.', ','); }
+function fmtPct(n) { return (n * 100).toFixed(1).replace('.', ',') + '%'; }
+function fmtPct0(n) { return Math.round(n * 100) + '%'; }
+function fmtG(n) { return fmt1(n) + ' g'; }
+
+// ============================================================================
+// RENDU — SIMULATEUR
+// ============================================================================
+function renderIngredientRows() {
   const tbody = document.getElementById('ingredient-rows');
-  if (!tbody) return;
-
   tbody.innerHTML = '';
-  let totalWeight = 0, totalWater = 0, totalFat = 0, totalSugar = 0, totalSolids = 0;
 
-  recipeLines.forEach((line, index) => {
-    const dbItem = ingredientsDB.find(i => i.name === line.name) || {
-      category: 'Autre', water: 0, fat: 0, carbs: 0, sweetness: 0
-    };
-
-    const grams = Number(line.grams) || 0;
-    const wGrams = (grams * dbItem.water) / 100;
-    const fGrams = (grams * dbItem.fat) / 100;
-    const sGrams = (grams * (dbItem.carbs * (dbItem.sweetness / 100))) / 100;
-    const solGrams = grams - wGrams;
-
-    totalWeight += grams;
-    totalWater += wGrams;
-    totalFat += fGrams;
-    totalSugar += sGrams;
-    totalSolids += solGrams;
-
+  recipeLines.forEach((line, idx) => {
     const tr = document.createElement('tr');
+    const ing = findIngredient(line.name);
+    const c = calcIngredientLine(line);
+
+    // Ingredient dropdown
+    const nameOptions = ingredientsDB.map(i =>
+      `<option value="${i.name}" ${i.name === line.name ? 'selected' : ''}>${i.name}</option>`
+    ).join('');
+
     tr.innerHTML = `
       <td>
-        <select class="select-input row-name" data-index="${index}">
-          ${ingredientsDB.map(ing => `<option value="${ing.name}" ${ing.name === line.name ? 'selected' : ''}>${ing.name}</option>`).join('')}
-        </select>
+        <select data-idx="${idx}" data-field="name">${nameOptions}</select>
       </td>
-      <td class="num"><input type="number" class="num-input row-grams" data-index="${index}" value="${grams}" min="0"></td>
-      <td class="num">${wGrams.toFixed(1)}g</td>
-      <td class="num">${fGrams.toFixed(1)}g</td>
-      <td class="num">${sGrams.toFixed(1)}g</td>
-      <td class="num">${solGrams.toFixed(1)}g</td>
-      <td><span class="badge">${dbItem.category}</span></td>
-      <td><button class="btn-del" data-index="${index}">×</button></td>
+      <td class="num"><input type="number" min="0" step="1" value="${line.grams}" data-idx="${idx}" data-field="grams"></td>
+      <td class="num">${ing ? fmtPct(ing.water) : '—'}</td>
+      <td class="num">${ing ? fmtPct(ing.fat) : '—'}</td>
+      <td class="num">${fmt1(c.sugarEquiv)}</td>
+      <td class="num">${fmt1(c.solids)}</td>
+      <td>${ing ? ing.category : ''}</td>
+      <td><button class="row-delete" data-idx="${idx}" data-action="delete" aria-label="Supprimer">✕</button></td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Totaux
-  document.getElementById('total-weight').textContent = `${totalWeight.toFixed(0)}g`;
-  document.getElementById('total-water').textContent = `${totalWater.toFixed(1)}g`;
-  document.getElementById('total-fat').textContent = `${totalFat.toFixed(1)}g`;
-  document.getElementById('total-sugar').textContent = `${totalSugar.toFixed(1)}g`;
-  document.getElementById('total-solids').textContent = `${totalSolids.toFixed(1)}g`;
-
-  // Statistiques
-  const fatPct = totalWeight > 0 ? (totalFat / totalWeight) * 100 : 0;
-  const sugarPct = totalWeight > 0 ? (totalSugar / totalWeight) * 100 : 0;
-  const solidsPct = totalWeight > 0 ? (totalSolids / totalWeight) * 100 : 0;
-  const waterPct = totalWeight > 0 ? (totalWater / totalWeight) * 100 : 0;
-
-  const analysisContainer = document.getElementById('analysis-stats');
-  if (analysisContainer) {
-    analysisContainer.innerHTML = `
-      <div class="stat-card"><div class="stat-label">Matière Grasse</div><div class="stat-value">${fatPct.toFixed(1)}%</div></div>
-      <div class="stat-card"><div class="stat-label">Équivalent Sucre</div><div class="stat-value">${sugarPct.toFixed(1)}%</div></div>
-      <div class="stat-card"><div class="stat-label">Extrait Sec</div><div class="stat-value">${solidsPct.toFixed(1)}%</div></div>
-      <div class="stat-card"><div class="stat-label">Eau</div><div class="stat-value">${waterPct.toFixed(1)}%</div></div>
-    `;
-  }
-
-  // Barres d'évaluation avec conseils visuels
-  const evalGrid = document.getElementById('eval-grid');
-  if (evalGrid) {
-    evalGrid.innerHTML = 
-      renderEvaluationBar('Taux de Matière Grasse', fatPct, 5, 12) +
-      renderEvaluationBar('Taux de Sucre éq.', sugarPct, 12, 18) +
-      renderEvaluationBar('Extrait Sec Total', solidsPct, 30, 40);
-  }
-
-  // Recommandation dynamique
-  let recommended = 'Lite Ice Cream';
-  if (fatPct >= 8) recommended = 'Gelato';
-  else if (fatPct >= 5) recommended = 'Ice Cream';
-  else if (recipeLines.some(l => l.name.toLowerCase().includes('yaourt'))) recommended = 'Frozen Yogurt';
-  else if (fatPct < 2 && sugarPct > 12) recommended = 'Sorbet';
-
-  const recEl = document.getElementById('recommended-mode');
-  if (recEl) recEl.textContent = recommended;
-
-  const modeSelect = document.getElementById('mode-select-input');
-  if (modeSelect) {
-    modeSelect.value = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
-  }
-
-  attachRowEvents();
-}
-
-function attachRowEvents() {
-  document.querySelectorAll('.row-name').forEach(s => {
-    s.onchange = (e) => {
-      recipeLines[e.target.dataset.index].name = e.target.value;
-      saveToStorage(STORAGE_KEYS.recipe, recipeLines);
-      renderSimulator();
-    };
+  // Attach listeners
+  tbody.querySelectorAll('select, input').forEach(el => {
+    el.addEventListener('change', onIngredientChange);
   });
-
-  document.querySelectorAll('.row-grams').forEach(i => {
-    i.onchange = (e) => {
-      recipeLines[e.target.dataset.index].grams = Number(e.target.value) || 0;
+  tbody.querySelectorAll('[data-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      recipeLines.splice(idx, 1);
       saveToStorage(STORAGE_KEYS.recipe, recipeLines);
       renderSimulator();
-    };
-  });
-
-  document.querySelectorAll('.btn-del').forEach(b => {
-    b.onclick = (e) => {
-      recipeLines.splice(e.target.dataset.index, 1);
-      saveToStorage(STORAGE_KEYS.recipe, recipeLines);
-      renderSimulator();
-    };
+    });
   });
 }
 
-function renderGuides() {
-  const tsBody = document.getElementById('troubleshoot-rows');
-  if (tsBody) {
-    tsBody.innerHTML = DEFAULT_TROUBLESHOOT.map(t => `
-      <tr>
-        <td><strong>${t.symptom}</strong></td>
-        <td>${t.cause}</td>
-        <td>${t.fix}</td>
-        <td>${t.future}</td>
-      </tr>
-    `).join('');
+function onIngredientChange(e) {
+  const idx = parseInt(e.target.dataset.idx);
+  const field = e.target.dataset.field;
+  if (field === 'grams') {
+    recipeLines[idx].grams = Math.max(0, parseInt(e.target.value) || 0);
+  } else {
+    recipeLines[idx][field] = e.target.value;
   }
-
-  const tipsList = document.getElementById('tips-list');
-  if (tipsList) {
-    tipsList.innerHTML = DEFAULT_TIPS.map(tip => `<li>${tip}</li>`).join('');
-  }
-
-  const modesBody = document.getElementById('modes-rows');
-  if (modesBody) {
-    modesBody.innerHTML = DEFAULT_MODES_INFO.map(m => `
-      <tr>
-        <td><strong>${m.mode}</strong></td>
-        <td>${m.desc}</td>
-        <td class="num">${m.fat}</td>
-        <td class="num">${m.sugar}</td>
-      </tr>
-    `).join('');
-  }
-
-  const stepsList = document.getElementById('steps-list');
-  if (stepsList) {
-    stepsList.innerHTML = DEFAULT_STEPS.map(s => `<li>${s}</li>`).join('');
-  }
+  saveToStorage(STORAGE_KEYS.recipe, recipeLines);
+  renderSimulator();
 }
 
-function renderIngredientsDB() {
-  const tbody = document.getElementById('ingredients-db-rows');
-  if (!tbody) return;
+function renderTotals() {
+  const t = calcTotals(recipeLines);
+  document.getElementById('total-weight').textContent = fmt0(t.totalWeight) + ' g';
+  document.getElementById('total-water').textContent = fmtPct(t.waterPct);
+  document.getElementById('total-fat').textContent = fmtPct(t.fatPct);
+  document.getElementById('total-sugar').textContent = fmt1(t.sugarEquiv) + ' g';
+  document.getElementById('total-solids').textContent = fmt1(t.solids) + ' g';
+  return t;
+}
 
-  tbody.innerHTML = ingredientsDB.map(i => `
-    <tr>
-      <td><strong>${i.name}</strong></td>
-      <td><span class="badge">${i.category}</span></td>
-      <td class="num">${i.water}%</td>
-      <td class="num">${i.fat}%</td>
-      <td class="num">${i.protein}%</td>
-      <td class="num">${i.carbs}%</td>
-      <td class="num">${i.sweetness}</td>
-      <td class="num">${i.kcal}</td>
-      <td class="num">${i.fiber}g</td>
-      <td>${i.notes || '-'}</td>
-    </tr>
+function renderAnalysis(totals) {
+  const stats = [
+    { label: 'Poids total', value: fmt0(totals.totalWeight) + ' g', note: 'Poids total de la préparation' },
+    { label: 'Part de fruits', value: fmtPct(totals.fruitPct), note: 'Proportion de fruit frais' },
+    { label: 'Part de laitiers', value: fmtPct(totals.dairyPct), note: 'Fromage blanc + crème' },
+    { label: 'Part de sucrants', value: fmtPct(totals.sweetenerPct), note: 'Sucre + miel + agave' },
+    { label: 'MG globale', value: fmtPct(totals.fatPct), note: 'Matière grasse pondérée' },
+    { label: 'Sucre équivalent', value: fmt1(totals.sugarEquiv) + ' g', note: 'Pouvoir sucrant en éq. sucre' },
+    { label: 'Sucre éq. (%)', value: fmtPct(totals.sugarPct), note: 'Sucre éq. / poids total' },
+    { label: 'Extrait sec', value: fmt1(totals.solids) + ' g', note: 'Matières non aqueuses' },
+    { label: 'Extrait sec (%)', value: fmtPct(totals.solidsPct), note: 'Proportion de matières solides' },
+  ];
+
+  const grid = document.getElementById('analysis-stats');
+  grid.innerHTML = stats.map(s => `
+    <div class="stat-item">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-note">${s.note}</div>
+    </div>
   `).join('');
 }
 
-function setupUI() {
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.onclick = () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      tab.classList.add('active');
-      const target = document.getElementById(`tab-${tab.dataset.tab}`);
-      if (target) target.classList.add('active');
-    };
-  });
+function renderEvaluations(totals) {
+  const modeSelect = document.getElementById('mode-select-input');
+  const selectedMode = modeSelect ? modeSelect.value : null;
+  const target = selectedMode ? getModeTargets(selectedMode) : null;
 
-  const themeToggle = document.querySelector('[data-theme-toggle]');
-  if (themeToggle) {
-    themeToggle.onclick = () => document.body.classList.toggle('dark-theme');
-  }
+  const fatEval = evaluateFat(totals.fatPct, target);
+  const sugarEval = evaluateSugar(totals.sugarPct, target);
+  const fruitEval = evaluateFruit(totals.fruitPct);
+  const weightEval = evaluateWeight(totals.totalWeight);
+
+  const fatTargetText = target
+    ? `Cible ${selectedMode}: ${Math.round(target.fat.min * 100)}-${Math.round(target.fat.max * 100)}% MG`
+    : 'Cible: 5-15% glace, <5% sorbet';
+  const sugarTargetText = target
+    ? `Cible ${selectedMode}: ${Math.round(target.sugar.min * 100)}-${Math.round(target.sugar.max * 100)}% sucre éq.`
+    : 'Cible: 15-25% (baisse le point de congélation)';
+
+  const evals = [
+    { label: 'Matière grasse', value: fatEval.text, level: fatEval.level, target: fatTargetText },
+    { label: 'Sucre équivalent', value: sugarEval.text, level: sugarEval.level, target: sugarTargetText },
+    { label: 'Part de fruits', value: fruitEval.text, level: fruitEval.level, target: 'Détermine glace vs sorbet' },
+    { label: 'Poids total', value: weightEval.text, level: weightEval.level, target: `Limite pint Creami: ${MAX_BATCH_WEIGHT}g max` },
+  ];
+
+  const grid = document.getElementById('eval-grid');
+  grid.innerHTML = evals.map(e => `
+    <div class="eval-item ${e.level}">
+      <div class="eval-label">${e.label}</div>
+      <div class="eval-value">${e.value}</div>
+      <div class="stat-note">${e.target}</div>
+    </div>
+  `).join('');
+
+  const mode = recommendMode(totals.dairyPct, totals.fatPct, totals.sugarPct);
+  document.getElementById('recommended-mode').textContent = mode;
 }
 
-function setupActions() {
-  const reapplyBtn = document.getElementById('reapply-mode');
-  if (reapplyBtn) {
-    reapplyBtn.onclick = function() {
-      const selInput = document.getElementById('mode-select-input');
-      const selectedMode = selInput ? selInput.value : 'Lite Ice Cream';
-      saveToStorage(STORAGE_KEYS.mode, selectedMode);
-      applyModeAdjustment(selectedMode);
+function renderSimulator() {
+  renderIngredientRows();
+  const totals = renderTotals();
+  renderAnalysis(totals);
+  renderEvaluations(totals);
+}
+
+// ============================================================================
+// RENDU — GUIDE TEXTURE
+// ============================================================================
+function renderTroubleshoot() {
+  const tbody = document.getElementById('troubleshoot-rows');
+  tbody.innerHTML = TROUBLESHOOT.map(t => `
+    <tr>
+      <td><strong>${t.symptom}</strong></td>
+      <td>${t.cause}</td>
+      <td>${t.fixNow}</td>
+      <td>${t.fixNext}</td>
+    </tr>
+  `).join('');
+
+  const tipsList = document.getElementById('tips-list');
+  tipsList.innerHTML = TIPS.map(tip => `<li>${tip}</li>`).join('');
+}
+
+// ============================================================================
+// RENDU — MODES
+// ============================================================================
+function renderModes() {
+  const tbody = document.getElementById('modes-rows');
+  tbody.innerHTML = MODES.map(m => `
+    <tr>
+      <td><strong>${m.mode}</strong></td>
+      <td>${m.desc}</td>
+      <td class="num">${m.mg}</td>
+      <td class="num">${m.sugar}</td>
+    </tr>
+  `).join('');
+
+  const stepsList = document.getElementById('steps-list');
+  stepsList.innerHTML = STEPS.map(s => `
+    <li>
+      <div>
+        <div class="step-title">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+      </div>
+    </li>
+  `).join('');
+}
+
+// ============================================================================
+// RENDU — JOURNAL
+// ============================================================================
+function renderJournal() {
+  const tbody = document.getElementById('journal-rows');
+  tbody.innerHTML = '';
+
+  journal.forEach((entry, idx) => {
+    const tr = document.createElement('tr');
+    const modeOptions = MODES.map(m => `<option ${m.mode === entry.mode ? 'selected' : ''}>${m.mode}</option>`).join('');
+
+    tr.innerHTML = `
+      <td><input type="date" value="${entry.date}" data-jidx="${idx}" data-field="date"></td>
+      <td><input type="text" value="${entry.recipe || ''}" data-jidx="${idx}" data-field="recipe" placeholder="Nom"></td>
+      <td class="num"><input type="number" min="0" value="${entry.fruit || 0}" data-jidx="${idx}" data-field="fruit"></td>
+      <td class="num"><input type="number" min="0" value="${entry.fb || 0}" data-jidx="${idx}" data-field="fb"></td>
+      <td class="num"><input type="number" min="0" value="${entry.cream || 0}" data-jidx="${idx}" data-field="cream"></td>
+      <td class="num"><input type="number" min="0" value="${entry.sugar || 0}" data-jidx="${idx}" data-field="sugar"></td>
+      <td class="num"><input type="number" min="0" value="${entry.honey || 0}" data-jidx="${idx}" data-field="honey"></td>
+      <td class="num"><input type="number" min="0" value="${entry.agave || 0}" data-jidx="${idx}" data-field="agave"></td>
+      <td><select data-jidx="${idx}" data-field="mode">${modeOptions}</select></td>
+      <td class="num"><input type="number" min="1" max="5" value="${entry.spins || 1}" data-jidx="${idx}" data-field="spins"></td>
+      <td><input type="text" value="${entry.liquid || ''}" data-jidx="${idx}" data-field="liquid" placeholder="ex: 1 c.s. lait"></td>
+      <td class="num"><input type="number" min="1" max="5" value="${entry.scoreTexture || ''}" data-jidx="${idx}" data-field="scoreTexture"></td>
+      <td class="num"><input type="number" min="1" max="5" value="${entry.scoreSweet || ''}" data-jidx="${idx}" data-field="scoreSweet"></td>
+      <td class="num"><input type="number" min="1" max="5" value="${entry.scoreIcy || ''}" data-jidx="${idx}" data-field="scoreIcy"></td>
+      <td><input type="text" value="${entry.notes || ''}" data-jidx="${idx}" data-field="notes" placeholder="Notes"></td>
+      <td><input type="text" value="${entry.adjustment || ''}" data-jidx="${idx}" data-field="adjustment" placeholder="Ajustement"></td>
+      <td><button class="row-delete" data-jidx="${idx}" data-action="jdelete" aria-label="Supprimer">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Listeners
+  tbody.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('change', onJournalChange);
+  });
+  tbody.querySelectorAll('[data-action="jdelete"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.jidx);
+      journal.splice(idx, 1);
+      saveToStorage(STORAGE_KEYS.journal, journal);
+      renderJournal();
+    });
+  });
+
+  // Stats
+  renderJournalStats();
+}
+
+function onJournalChange(e) {
+  const idx = parseInt(e.target.dataset.jidx);
+  const field = e.target.dataset.field;
+  let val = e.target.value;
+  if (['fruit','fb','cream','sugar','honey','agave','spins','scoreTexture','scoreSweet','scoreIcy'].includes(field)) {
+    val = parseInt(val) || 0;
+  }
+  journal[idx][field] = val;
+  saveToStorage(STORAGE_KEYS.journal, journal);
+  renderJournalStats();
+}
+
+function renderJournalStats() {
+  const valid = journal.filter(j => j.recipe);
+  const avg = (field) => {
+    const vals = valid.map(j => j[field]).filter(v => v > 0);
+    return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2).replace('.', ',') : '—';
+  };
+  const avgSpins = () => {
+    const vals = valid.map(j => j.spins).filter(v => v > 0);
+    return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1).replace('.', ',') : '—';
+  };
+
+  const stats = [
+    { label: 'Nombre d\'essais', value: String(valid.length) },
+    { label: 'Score texture moyen', value: avg('scoreTexture') },
+    { label: 'Score sucré moyen', value: avg('scoreSweet') },
+    { label: 'Score glacé moyen', value: avg('scoreIcy') },
+    { label: 'Nb moyen de spins', value: avgSpins() },
+  ];
+
+  document.getElementById('journal-stats').innerHTML = stats.map(s => `
+    <div class="stat-item">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================================
+// RENDU — BASE D'INGRÉDIENTS
+// ============================================================================
+function renderIngredientsDB() {
+  const tbody = document.getElementById('ingredients-db-rows');
+  tbody.innerHTML = '';
+
+  ingredientsDB.forEach((ing, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" value="${ing.name}" data-iidx="${idx}" data-ifield="name"></td>
+      <td><input type="text" value="${ing.category}" data-iidx="${idx}" data-ifield="category"></td>
+      <td class="num"><input type="number" step="0.001" min="0" max="1" value="${ing.water}" data-iidx="${idx}" data-ifield="water"></td>
+      <td class="num"><input type="number" step="0.001" min="0" max="1" value="${ing.fat}" data-iidx="${idx}" data-ifield="fat"></td>
+      <td class="num"><input type="number" step="0.001" min="0" max="1" value="${ing.protein}" data-iidx="${idx}" data-ifield="protein"></td>
+      <td class="num"><input type="number" step="0.001" min="0" max="1" value="${ing.carbs}" data-iidx="${idx}" data-ifield="carbs"></td>
+      <td class="num"><input type="number" step="0.01" min="0" value="${ing.sweetness}" data-iidx="${idx}" data-ifield="sweetness"></td>
+      <td class="num"><input type="number" step="1" min="0" value="${ing.kcal}" data-iidx="${idx}" data-ifield="kcal"></td>
+      <td class="num"><input type="number" step="0.001" min="0" max="1" value="${ing.fiber}" data-iidx="${idx}" data-ifield="fiber"></td>
+      <td><input type="text" value="${ing.notes}" data-iidx="${idx}" data-ifield="notes"></td>
+      <td><button class="row-delete" data-iidx="${idx}" data-action="idelete" aria-label="Supprimer">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('input').forEach(el => {
+    el.addEventListener('change', onIngredientDbChange);
+  });
+
+  tbody.querySelectorAll('[data-action="idelete"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.iidx);
+      ingredientsDB.splice(idx, 1);
+      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
+      renderIngredientsDB();
       renderSimulator();
-    };
+    });
+  });
+}
+
+function onIngredientDbChange(e) {
+  const idx = parseInt(e.target.dataset.iidx);
+  const field = e.target.dataset.ifield;
+  let val = e.target.value;
+  if (['water','fat','protein','carbs','sweetness','fiber'].includes(field)) {
+    val = parseFloat(val) || 0;
+  } else if (field === 'kcal') {
+    val = parseInt(val) || 0;
+  }
+  ingredientsDB[idx][field] = val;
+
+  // Auto-remplissage: si on vient de renseigner la catégorie d'une ligne
+  // encore vierge (toutes les valeurs nutritionnelles à 0), on reprend la
+  // moyenne des ingrédients déjà présents dans cette catégorie.
+  let didAutofill = false;
+  if (field === 'category' && val) {
+    const isBlank = CATEGORY_AVERAGE_FIELDS.every(f => !ingredientsDB[idx][f]);
+    if (isBlank) {
+      const avg = computeCategoryAverages(val, idx);
+      if (avg) {
+        CATEGORY_AVERAGE_FIELDS.forEach(f => {
+          ingredientsDB[idx][f] = f === 'kcal' ? Math.round(avg[f]) : Math.round(avg[f] * 1000) / 1000;
+        });
+        didAutofill = true;
+      }
+    }
   }
 
-  const modeSelect = document.getElementById('mode-select-input');
-  if (modeSelect) {
-    modeSelect.onchange = function() {
-      saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
-    };
+  saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
+  if (didAutofill) {
+    renderIngredientsDB();
   }
+  renderSimulator();
+}
 
+// ============================================================================
+// NAVIGATION PAR ONGLETS
+// ============================================================================
+function setupTabs() {
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab; // "simulator", "texture", "modes", ...
+      const targetPanelId = 'tab-' + target; // "tab-simulator", "tab-texture", ...
+
+      tabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+
+      panels.forEach(p => p.classList.remove('active'));
+
+      const panel = document.getElementById(targetPanelId);
+      if (panel) {
+        panel.classList.add('active');
+      } else {
+        console.warn('Panneau non trouvé pour l’onglet:', target, 'ID attendu:', targetPanelId);
+      }
+    });
+  });
+}
+
+// ============================================================================
+// THÈME
+// ============================================================================
+function setupTheme() {
+  const toggle = document.querySelector('[data-theme-toggle]');
+  const root = document.documentElement;
+  let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  root.setAttribute('data-theme', theme);
+
+  const updateIcon = () => {
+    toggle.innerHTML = theme === 'dark'
+      ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+    toggle.setAttribute('aria-label', 'Basculer vers le thème ' + (theme === 'dark' ? 'clair' : 'sombre'));
+  };
+  updateIcon();
+
+  toggle.addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', theme);
+    updateIcon();
+  });
+}
+
+// ============================================================================
+// ACTIONS BOUTONS
+// ============================================================================
+function setupActions() {
+  // Add ingredient row
   const addIngBtn = document.getElementById('add-ingredient');
   if (addIngBtn) {
-    addIngBtn.onclick = function() {
-      recipeLines.push({ name: ingredientsDB[0].name, grams: 100 });
+    addIngBtn.addEventListener('click', () => {
+      recipeLines.push({ name: ingredientsDB[0].name, grams: 0 });
       saveToStorage(STORAGE_KEYS.recipe, recipeLines);
       renderSimulator();
-    };
+    });
   }
 
+  // Mode select save
+  const modeSelect = document.getElementById('mode-select-input');
+  if (modeSelect) {
+    const savedMode = loadFromStorage(STORAGE_KEYS.mode, 'Lite Ice Cream');
+    modeSelect.value = savedMode;
+    modeSelect.addEventListener('change', () => {
+      saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
+      renderSimulator(); // met à jour les barres colorées uniquement, ne touche pas aux proportions
+    });
+  }
+
+  // Mode select: réappliquer l'ajustement automatique des proportions à la demande
+  const reapplyBtn = document.getElementById('reapply-mode');
+  if (reapplyBtn) {
+    reapplyBtn.addEventListener('click', () => {
+      if (modeSelect) {
+        applyModeAdjustment(modeSelect.value);
+      }
+    });
+  }
+
+  // Journal: add entry
+  const addJournalBtn = document.getElementById('add-journal');
+  if (addJournalBtn) {
+    addJournalBtn.addEventListener('click', () => {
+      const today = new Date().toISOString().split('T')[0];
+      journal.push({
+        date: today, recipe: '', fruit: 0, fb: 0, cream: 0, sugar: 0, honey: 0, agave: 0,
+        mode: 'Lite Ice Cream', spins: 1, liquid: '', scoreTexture: '', scoreSweet: '', scoreIcy: '',
+        notes: '', adjustment: ''
+      });
+      saveToStorage(STORAGE_KEYS.journal, journal);
+      renderJournal();
+    });
+  }
+
+  // Journal: export
+  const exportBtn = document.getElementById('export-journal');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(journal, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'creami_journal.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  // Journal: import
+  const importBtn = document.getElementById('import-journal');
+  if (importBtn) {
+    importBtn.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (Array.isArray(data)) {
+              journal = data;
+              saveToStorage(STORAGE_KEYS.journal, journal);
+              renderJournal();
+            } else {
+              alert('Le fichier JSON doit contenir un tableau.');
+            }
+          } catch (err) {
+            alert('Fichier JSON invalide.');
+          }
+        };
+        reader.readAsText(file);
+      });
+      input.click();
+    });
+  }
+
+  // Journal: clear
+  const clearBtn = document.getElementById('clear-journal');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Effacer tout le journal ? Cette action est irréversible.')) {
+        journal = [];
+        saveToStorage(STORAGE_KEYS.journal, journal);
+        renderJournal();
+      }
+    });
+  }
+
+  // Ingredients DB: add new empty row
   const addIngDbBtn = document.getElementById('add-ingredient-db');
   if (addIngDbBtn) {
-    addIngDbBtn.onclick = function() {
+    addIngDbBtn.addEventListener('click', () => {
       ingredientsDB.push({
-        name: 'Nouveau ' + (ingredientsDB.length + 1), category: 'Divers',
-        water: 50, fat: 0, protein: 0, carbs: 50, sweetness: 50, kcal: 200, fiber: 0, notes: ''
+        name: '', category: '', water: 0, fat: 0, protein: 0,
+        carbs: 0, sweetness: 0, kcal: 0, fiber: 0, notes: ''
       });
       saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
       renderIngredientsDB();
-    };
+    });
   }
 
+  // Ingredients DB: reset to defaults
   const resetIngBtn = document.getElementById('reset-ingredients');
   if (resetIngBtn) {
-    resetIngBtn.onclick = function() {
+    resetIngBtn.addEventListener('click', () => {
       if (confirm("Réinitialiser la base d'ingrédients aux valeurs par défaut ?")) {
         ingredientsDB = JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS));
         saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
         renderIngredientsDB();
         renderSimulator();
       }
-    };
+    });
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  setupUI();
-  setupActions();
-  renderSimulator();
-  renderGuides();
-  renderIngredientsDB();
-});
+// ============================================================================
+// INITIALISATION
+// ============================================================================
+function init() {
+  try {
+    // Load data
+    ingredientsDB = loadFromStorage(STORAGE_KEYS.ingredients, JSON.parse(JSON.stringify(DEFAULT_INGREDIENTS)));
+    recipeLines = loadFromStorage(STORAGE_KEYS.recipe, [
+      { name: "Pêche (fraîche)", grams: 250 },
+      { name: "Fromage blanc 40%", grams: 100 },
+      { name: "Crème 30%", grams: 50 },
+      { name: "Sucre blanc", grams: 40 },
+      { name: "Miel", grams: 0 },
+      { name: "Sirop d'agave", grams: 0 },
+      { name: "Lait entier", grams: 0 },
+    ]);
+    journal = loadFromStorage(STORAGE_KEYS.journal, [
+      {
+        date: '2026-08-04',
+        recipe: 'Pêche-fromage blanc',
+        fruit: 250,
+        fb: 100,
+        cream: 50,
+        sugar: 40,
+        honey: 0,
+        agave: 0,
+        mode: 'Lite Ice Cream',
+        spins: 2,
+        liquid: '1 c.s. lait',
+        scoreTexture: 4,
+        scoreSweet: 4,
+        scoreIcy: 3,
+        notes: 'Crémeux, légèrement poudreux au 1er spin. Re-spin + lait = parfait.',
+        adjustment: 'Réduire sucre à 35g, ajouter xanthane'
+      }
+    ]);
+
+    // Setup
+    setupTheme();
+    setupTabs();
+    setupActions();
+
+    // Render all sections
+    renderSimulator();
+    renderTroubleshoot();
+    renderModes();
+    renderJournal();
+    renderIngredientsDB();
+  } catch (err) {
+    console.error('Erreur lors de l’initialisation de l’app:', err);
+    alert('Une erreur est survenue au chargement de l’application. Ouvre la console (F12) pour voir le détail.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
