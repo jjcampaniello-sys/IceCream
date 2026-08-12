@@ -145,6 +145,9 @@ const MODES = [
   { mode: "Gelato",         desc: "Mode (modèles Deluxe) pour texture italienne onctueuse, moins aérée que Ice Cream. Base plus riche en sucre et plus faible en MG que la glace classique.", mg: "6-12%", sugar: "18-28%" },
 ];
 
+// Limite de remplissage du pint Ninja Creami (grammes)
+const MAX_BATCH_WEIGHT = 530;
+
 const STEPS = [
   { title: "Préparation", desc: "Mixer tous les ingrédients au blender jusqu'à obtenir un liquide homogène. Goûter et ajuster le sucre AVANT congélation (le froid réduit la perception du sucré)." },
   { title: "Remplissage", desc: "Verser dans le pint Creami sans dépasser la ligne de remplissage maximum. Lisser la surface avec une cuillère." },
@@ -357,6 +360,11 @@ function adjustLever({ category, valueFn, targetMin, targetMax, preferredName, a
   if (Math.abs(denom) < 1e-9) return; // évite une division par zéro
   let X = (targetPctMid * weightOther - contribOther) / denom;
   X = Math.max(0, Math.round(X));
+
+  // Ne jamais dépasser la limite de remplissage du pint
+  const maxAllowedX = Math.max(0, MAX_BATCH_WEIGHT - weightOther);
+  X = Math.min(X, maxAllowedX);
+
   recipeLines[idx].grams = X;
 }
 
@@ -443,6 +451,14 @@ function evaluateFruit(fruitPct) {
   if (fruitPct < 0.40) return { text: "Moyen — glace fruitée", level: 'good' };
   if (fruitPct < 0.60) return { text: "Élevé — sorbet lacté", level: 'warn' };
   return { text: "Très élevé — profil sorbet", level: 'warn' };
+}
+
+function evaluateWeight(totalWeight) {
+  if (totalWeight <= MAX_BATCH_WEIGHT) {
+    return { text: `OK — sous la limite du pint (${MAX_BATCH_WEIGHT}g)`, level: 'good' };
+  }
+  const excess = Math.round(totalWeight - MAX_BATCH_WEIGHT);
+  return { text: `Dépasse la limite du pint de ${excess}g — réduire les quantités`, level: 'bad' };
 }
 
 function recommendMode(dairyPct, fatPct, sugarPct) {
@@ -561,6 +577,7 @@ function renderEvaluations(totals) {
   const fatEval = evaluateFat(totals.fatPct, target);
   const sugarEval = evaluateSugar(totals.sugarPct, target);
   const fruitEval = evaluateFruit(totals.fruitPct);
+  const weightEval = evaluateWeight(totals.totalWeight);
 
   const fatTargetText = target
     ? `Cible ${selectedMode}: ${Math.round(target.fat.min * 100)}-${Math.round(target.fat.max * 100)}% MG`
@@ -573,6 +590,7 @@ function renderEvaluations(totals) {
     { label: 'Matière grasse', value: fatEval.text, level: fatEval.level, target: fatTargetText },
     { label: 'Sucre équivalent', value: sugarEval.text, level: sugarEval.level, target: sugarTargetText },
     { label: 'Part de fruits', value: fruitEval.text, level: fruitEval.level, target: 'Détermine glace vs sorbet' },
+    { label: 'Poids total', value: weightEval.text, level: weightEval.level, target: `Limite pint Creami: ${MAX_BATCH_WEIGHT}g max` },
   ];
 
   const grid = document.getElementById('eval-grid');
@@ -878,7 +896,17 @@ function setupActions() {
     modeSelect.value = savedMode;
     modeSelect.addEventListener('change', () => {
       saveToStorage(STORAGE_KEYS.mode, modeSelect.value);
-      applyModeAdjustment(modeSelect.value);
+      renderSimulator(); // met à jour les barres colorées uniquement, ne touche pas aux proportions
+    });
+  }
+
+  // Mode select: réappliquer l'ajustement automatique des proportions à la demande
+  const reapplyBtn = document.getElementById('reapply-mode');
+  if (reapplyBtn) {
+    reapplyBtn.addEventListener('click', () => {
+      if (modeSelect) {
+        applyModeAdjustment(modeSelect.value);
+      }
     });
   }
 
