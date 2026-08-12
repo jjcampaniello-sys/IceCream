@@ -38,6 +38,50 @@ const DEFAULT_INGREDIENTS = [
   { name: "Café (espresso liquide)",category: "Arôme",      water: 0.99, fat: 0.0,   protein: 0.001, carbs: 0.0,  sweetness: 0.0,  kcal: 2,   fiber: 0.0,   notes: "Arôme intense. Remplacer une partie du liquide par l'espresso" },
   { name: "Citron (jus frais)",     category: "Fruit",      water: 0.92, fat: 0.001, protein: 0.005, carbs: 0.06, sweetness: 0.15, kcal: 22,  fiber: 0.0,   notes: "Acide, idéal pour sorbet. Équilibrer avec plus de sucre" },
   { name: "Pistache (purée)",       category: "Arôme",      water: 0.05, fat: 0.50,  protein: 0.20,  carbs: 0.20, sweetness: 0.08, kcal: 580, fiber: 0.10,  notes: "MG élevée, texture riche. Purée de pistache idéale pour glace" },
+
+  // --- Fruits supplémentaires ---
+  { name: "Melon",                  category: "Fruit",      water: 0.90, fat: 0.002, protein: 0.008, carbs: 0.08, sweetness: 0.45, kcal: 34,  fiber: 0.009, notes: "Très riche en eau, sorbet léger et rafraîchissant" },
+  { name: "Ananas (frais)",         category: "Fruit",      water: 0.86, fat: 0.001, protein: 0.005, carbs: 0.13, sweetness: 0.55, kcal: 50,  fiber: 0.014, notes: "Acidulé, bon équilibre sucre/acidité pour sorbet" },
+  { name: "Pomme",                  category: "Fruit",      water: 0.86, fat: 0.002, protein: 0.003, carbs: 0.14, sweetness: 0.45, kcal: 52,  fiber: 0.024, notes: "Mixer finement pour éviter la texture granuleuse" },
+  { name: "Poire",                  category: "Fruit",      water: 0.84, fat: 0.001, protein: 0.004, carbs: 0.15, sweetness: 0.50, kcal: 57,  fiber: 0.031, notes: "Texture fine une fois mixée, sorbet doux" },
+  { name: "Cerise (dénoyautée)",    category: "Fruit",      water: 0.82, fat: 0.003, protein: 0.011, carbs: 0.16, sweetness: 0.55, kcal: 63,  fiber: 0.021, notes: "Dénoyauter avant congélation" },
+  { name: "Pastèque",               category: "Fruit",      water: 0.91, fat: 0.002, protein: 0.006, carbs: 0.08, sweetness: 0.50, kcal: 30,  fiber: 0.004, notes: "Extrêmement riche en eau, réduire fortement le liquide ajouté" },
+  { name: "Kiwi",                   category: "Fruit",      water: 0.83, fat: 0.005, protein: 0.011, carbs: 0.15, sweetness: 0.45, kcal: 61,  fiber: 0.03,  notes: "Passer au tamis pour retirer les graines si besoin" },
+  { name: "Orange",                 category: "Fruit",      water: 0.87, fat: 0.001, protein: 0.009, carbs: 0.12, sweetness: 0.40, kcal: 47,  fiber: 0.021, notes: "Sorbet classique, ajouter le zeste pour l'arôme" },
+  { name: "Pamplemousse",           category: "Fruit",      water: 0.90, fat: 0.001, protein: 0.008, carbs: 0.08, sweetness: 0.20, kcal: 33,  fiber: 0.011, notes: "Acide, augmenter le sucre pour équilibrer" },
+  { name: "Cassis",                 category: "Fruit",      water: 0.82, fat: 0.004, protein: 0.014, carbs: 0.13, sweetness: 0.40, kcal: 63,  fiber: 0.043, notes: "Très acidulé et parfumé, sorbet intense" },
+  { name: "Rhubarbe (cuite)",       category: "Fruit",      water: 0.88, fat: 0.001, protein: 0.009, carbs: 0.09, sweetness: 0.25, kcal: 35,  fiber: 0.018, notes: "Toujours cuite au préalable, très acide crue" },
+  { name: "Noix de coco (pulpe)",   category: "Fruit",      water: 0.47, fat: 0.33,  protein: 0.033, carbs: 0.15, sweetness: 0.15, kcal: 354, fiber: 0.09,  notes: "Très riche en MG, base pour glace coco onctueuse" },
+  { name: "Avocat",                 category: "Fruit",      water: 0.73, fat: 0.15,  protein: 0.02,  carbs: 0.09, sweetness: 0.05, kcal: 160, fiber: 0.067, notes: "Base crémeuse végétale, équilibrer avec citron et sucre" },
+  { name: "Fruit de la passion",    category: "Fruit",      water: 0.73, fat: 0.004, protein: 0.02,  carbs: 0.23, sweetness: 0.55, kcal: 97,  fiber: 0.107, notes: "Très parfumé, passer au tamis pour retirer les graines" },
+
+  // --- Laitiers supplémentaires ---
+  { name: "Lait écrémé",            category: "Laitier",    water: 0.91, fat: 0.001, protein: 0.034, carbs: 0.05, sweetness: 0.10, kcal: 34,  fiber: 0.0,   notes: "Base très légère, augmenter la MG pour éviter les cristaux" },
+  { name: "Lait concentré non sucré",category: "Laitier",   water: 0.74, fat: 0.075, protein: 0.067, carbs: 0.10, sweetness: 0.10, kcal: 134, fiber: 0.0,   notes: "Riche en extrait sec, améliore la texture sans trop de MG" },
+  { name: "Lait concentré sucré",   category: "Laitier",    water: 0.27, fat: 0.085, protein: 0.076, carbs: 0.55, sweetness: 0.60, kcal: 321, fiber: 0.0,   notes: "Très sucré et épais, réduire le sucre ajouté ailleurs" },
+  { name: "Mascarpone",             category: "Laitier",    water: 0.47, fat: 0.44,  protein: 0.035, carbs: 0.03, sweetness: 0.05, kcal: 429, fiber: 0.0,   notes: "Très riche en MG, texture ultra onctueuse en petite quantité" },
+  { name: "Crème fraîche épaisse",  category: "Laitier",    water: 0.63, fat: 0.30,  protein: 0.023, carbs: 0.03, sweetness: 0.05, kcal: 292, fiber: 0.0,   notes: "Légèrement acidulée, équivalent à la crème liquide 30%" },
+  { name: "Beurre",                 category: "Laitier",    water: 0.16, fat: 0.82,  protein: 0.007, carbs: 0.006,sweetness: 0.0,  kcal: 717, fiber: 0.0,   notes: "Très riche en MG, utiliser en petite quantité" },
+  { name: "Lait de coco (boîte)",   category: "Laitier",    water: 0.68, fat: 0.24,  protein: 0.023, carbs: 0.06, sweetness: 0.10, kcal: 230, fiber: 0.02,  notes: "Alternative végétale riche en MG, idéale pour glace coco" },
+
+  // --- Sucrants supplémentaires ---
+  { name: "Sirop de glucose",       category: "Sucre",      water: 0.20, fat: 0.0,   protein: 0.0,   carbs: 0.80, sweetness: 0.70, kcal: 316, fiber: 0.0,   notes: "Limite fortement la cristallisation, texture souple même très froid" },
+  { name: "Sucre de coco",          category: "Sucre",      water: 0.02, fat: 0.0,   protein: 0.002, carbs: 0.94, sweetness: 0.75, kcal: 375, fiber: 0.0,   notes: "Goût caramel léger, un peu moins sucrant que le sucre blanc" },
+  { name: "Stevia (poudre pure)",   category: "Sucre",      water: 0.0,  fat: 0.0,   protein: 0.0,   carbs: 1.0,  sweetness: 250,  kcal: 0,   fiber: 0.0,   notes: "Extrêmement concentré: quelques g suffisent, n'apporte pas de corps" },
+
+  // --- Additifs / stabilisants supplémentaires ---
+  { name: "Poudre de lait écrémé",  category: "Stabilisant",water: 0.03, fat: 0.008, protein: 0.34,  carbs: 0.52, sweetness: 0.15, kcal: 362, fiber: 0.0,   notes: "1-2 c. à soupe par pint, augmente l'extrait sec sans ajouter de MG" },
+  { name: "Gélatine",               category: "Stabilisant",water: 0.13, fat: 0.005, protein: 0.85,  carbs: 0.0,  sweetness: 0.0,  kcal: 335, fiber: 0.0,   notes: "1-2g par pint, hydrater puis dissoudre à chaud avant d'incorporer" },
+  { name: "Gomme de guar",          category: "Stabilisant",water: 0.10, fat: 0.005, protein: 0.04,  carbs: 0.80, sweetness: 0.0,  kcal: 356, fiber: 0.75,  notes: "Alternative à la gomme xanthane, 1/8 c. à thé par pint" },
+  { name: "Blanc d'œuf",            category: "Stabilisant",water: 0.88, fat: 0.0002,protein: 0.11,  carbs: 0.007,sweetness: 0.0,  kcal: 52,  fiber: 0.0,   notes: "Stabilise et allège la texture, monter en neige avant d'incorporer" },
+  { name: "Jaune d'œuf",            category: "Stabilisant",water: 0.50, fat: 0.27,  protein: 0.16,  carbs: 0.036,sweetness: 0.0,  kcal: 322, fiber: 0.0,   notes: "Base de crème anglaise, onctuosité classique des glaces traditionnelles" },
+  { name: "Lécithine de soja",      category: "Stabilisant",water: 0.01, fat: 0.98,  protein: 0.0,   carbs: 0.0,  sweetness: 0.0,  kcal: 763, fiber: 0.0,   notes: "Émulsifiant, 1/2 c. à thé par pint pour une texture plus lisse" },
+
+  // --- Arômes / mix-ins supplémentaires ---
+  { name: "Beurre de cacahuète",    category: "Arôme",      water: 0.02, fat: 0.50,  protein: 0.25,  carbs: 0.20, sweetness: 0.10, kcal: 588, fiber: 0.06,  notes: "Mix-in ou base, très riche en MG et protéines" },
+  { name: "Chocolat noir (70%)",    category: "Arôme",      water: 0.01, fat: 0.43,  protein: 0.08,  carbs: 0.45, sweetness: 0.35, kcal: 598, fiber: 0.11,  notes: "Faire fondre avant d'incorporer pour éviter les grumeaux" },
+  { name: "Extrait de vanille",     category: "Arôme",      water: 0.53, fat: 0.0006,protein: 0.0006,carbs: 0.13, sweetness: 0.0,  kcal: 288, fiber: 0.0,   notes: "Arôme pur, quantité minime, n'influence pas la texture" },
+  { name: "Noix de macadamia",      category: "Arôme",      water: 0.015,fat: 0.76,  protein: 0.079, carbs: 0.14, sweetness: 0.02, kcal: 718, fiber: 0.086, notes: "Très riche en MG, mix-in ou base pour glace ultra crémeuse" },
 ];
 
 // ============================================================================
@@ -164,6 +208,29 @@ const STORAGE_KEYS = {
   journal: 'creami_journal',
   mode: 'creami_mode',
 };
+
+// ============================================================================
+// AUTO-REMPLISSAGE PAR CATÉGORIE
+// Quand une nouvelle ligne d'ingrédient (encore vierge) reçoit une catégorie
+// qui correspond à une catégorie déjà présente dans la base, on reprend la
+// moyenne des ingrédients existants de cette catégorie pour pré-remplir les
+// valeurs nutritionnelles — dans le même format (fractions décimales) que
+// les éléments prédéfinis.
+// ============================================================================
+const CATEGORY_AVERAGE_FIELDS = ['water', 'fat', 'protein', 'carbs', 'sweetness', 'kcal', 'fiber'];
+
+function computeCategoryAverages(category, excludeIdx) {
+  const items = ingredientsDB.filter((ing, i) =>
+    i !== excludeIdx && ing.category.trim().toLowerCase() === category.trim().toLowerCase()
+  );
+  if (items.length === 0) return null;
+  const avg = {};
+  CATEGORY_AVERAGE_FIELDS.forEach(f => {
+    const sum = items.reduce((a, ing) => a + (ing[f] || 0), 0);
+    avg[f] = sum / items.length;
+  });
+  return avg;
+}
 
 // ============================================================================
 // FONCTIONS DE CALCUL
@@ -592,19 +659,7 @@ function renderIngredientsDB() {
   });
 
   tbody.querySelectorAll('input').forEach(el => {
-    el.addEventListener('change', (e) => {
-      const idx = parseInt(e.target.dataset.iidx);
-      const field = e.target.dataset.ifield;
-      let val = e.target.value;
-      if (['water','fat','protein','carbs','sweetness','fiber'].includes(field)) {
-        val = parseFloat(val) || 0;
-      } else if (field === 'kcal') {
-        val = parseInt(val) || 0;
-      }
-      ingredientsDB[idx][field] = val;
-      saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
-      renderSimulator();
-    });
+    el.addEventListener('change', onIngredientDbChange);
   });
 
   tbody.querySelectorAll('[data-action="idelete"]').forEach(btn => {
@@ -616,6 +671,41 @@ function renderIngredientsDB() {
       renderSimulator();
     });
   });
+}
+
+function onIngredientDbChange(e) {
+  const idx = parseInt(e.target.dataset.iidx);
+  const field = e.target.dataset.ifield;
+  let val = e.target.value;
+  if (['water','fat','protein','carbs','sweetness','fiber'].includes(field)) {
+    val = parseFloat(val) || 0;
+  } else if (field === 'kcal') {
+    val = parseInt(val) || 0;
+  }
+  ingredientsDB[idx][field] = val;
+
+  // Auto-remplissage: si on vient de renseigner la catégorie d'une ligne
+  // encore vierge (toutes les valeurs nutritionnelles à 0), on reprend la
+  // moyenne des ingrédients déjà présents dans cette catégorie.
+  let didAutofill = false;
+  if (field === 'category' && val) {
+    const isBlank = CATEGORY_AVERAGE_FIELDS.every(f => !ingredientsDB[idx][f]);
+    if (isBlank) {
+      const avg = computeCategoryAverages(val, idx);
+      if (avg) {
+        CATEGORY_AVERAGE_FIELDS.forEach(f => {
+          ingredientsDB[idx][f] = f === 'kcal' ? Math.round(avg[f]) : Math.round(avg[f] * 1000) / 1000;
+        });
+        didAutofill = true;
+      }
+    }
+  }
+
+  saveToStorage(STORAGE_KEYS.ingredients, ingredientsDB);
+  if (didAutofill) {
+    renderIngredientsDB();
+  }
+  renderSimulator();
 }
 
 // ============================================================================
