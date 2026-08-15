@@ -519,6 +519,7 @@ function renderIngredientRows() {
       <td class="num">${fmt1(c.sugarEquiv)}</td>
       <td class="num">${fmt1(c.solids)}</td>
       <td>${ing ? ing.category : ''}</td>
+      <td class="num">${fmt1(c.kcal)}</td>
       <td><button class="row-delete" data-idx="${idx}" data-action="delete" aria-label="Supprimer">✕</button></td>
     `;
     tbody.appendChild(tr);
