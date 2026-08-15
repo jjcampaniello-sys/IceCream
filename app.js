@@ -520,6 +520,7 @@ function renderIngredientRows() {
       <td class="num">${ing ? fmtPct(ing.fat) : '—'}</td>
       <td class="num">${fmt1(c.sugarEquiv)}</td>
       <td class="num">${fmt1(c.solids)}</td>
+      <td class="num">${fmt1(c.kcal)}</td>
       <td>${ing ? ing.category : ''}</td>
       <td><button class="row-delete" data-idx="${idx}" data-action="delete" aria-label="Supprimer">✕</button></td>
     `;
