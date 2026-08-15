@@ -38,8 +38,6 @@ const DEFAULT_INGREDIENTS = [
   { name: "Café (espresso liquide)",category: "Arôme",      water: 0.99, fat: 0.0,   protein: 0.001, carbs: 0.0,  sweetness: 0.0,  kcal: 2,   fiber: 0.0,   notes: "Arôme intense. Remplacer une partie du liquide par l'espresso" },
   { name: "Citron (jus frais)",     category: "Fruit",      water: 0.92, fat: 0.001, protein: 0.005, carbs: 0.06, sweetness: 0.15, kcal: 22,  fiber: 0.0,   notes: "Acide, idéal pour sorbet. Équilibrer avec plus de sucre" },
   { name: "Pistache (purée)",       category: "Arôme",      water: 0.05, fat: 0.50,  protein: 0.20,  carbs: 0.20, sweetness: 0.08, kcal: 580, fiber: 0.10,  notes: "MG élevée, texture riche. Purée de pistache idéale pour glace" },
-
-  // --- Fruits supplémentaires ---
   { name: "Melon",                  category: "Fruit",      water: 0.90, fat: 0.002, protein: 0.008, carbs: 0.08, sweetness: 0.45, kcal: 34,  fiber: 0.009, notes: "Très riche en eau, sorbet léger et rafraîchissant" },
   { name: "Ananas (frais)",         category: "Fruit",      water: 0.86, fat: 0.001, protein: 0.005, carbs: 0.13, sweetness: 0.55, kcal: 50,  fiber: 0.014, notes: "Acidulé, bon équilibre sucre/acidité pour sorbet" },
   { name: "Pomme",                  category: "Fruit",      water: 0.86, fat: 0.002, protein: 0.003, carbs: 0.14, sweetness: 0.45, kcal: 52,  fiber: 0.024, notes: "Mixer finement pour éviter la texture granuleuse" },
