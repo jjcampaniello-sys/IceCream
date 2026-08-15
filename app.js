@@ -322,50 +322,49 @@ function adjustLever({ category, valueFn, targetMin, targetMax, preferredName, a
 
   const targetPctMid = (targetMin + targetMax) / 2;
 
-  // Meilleur levier déjà présent dans la recette (plus forte contribution/gramme)
-  let idx = -1, bestVal = -Infinity;
+  // Tous les ingrédients de la catégorie déjà présents dans la recette
+  const categoryIndices = [];
+  let categoryWeight = 0, categoryContrib = 0;
   recipeLines.forEach((line, i) => {
     const ing = findIngredient(line.name);
     if (ing && ing.category === category) {
-      const v = valueFn(ing);
-      if (v > bestVal) { bestVal = v; idx = i; }
+      const g = Math.max(0, line.grams || 0);
+      categoryIndices.push(i);
+      categoryWeight += g;
+      categoryContrib += g * valueFn(ing);
     }
   });
 
-  // Sinon, ajouter un ingrédient de référence de cette catégorie
-  if (idx === -1) {
+  // Aucun ingrédient de cette catégorie: en ajouter un et lui attribuer
+  // directement le grammage nécessaire pour atteindre la cible.
+  if (categoryIndices.length === 0) {
     let template = findIngredient(preferredName);
     if (!template) template = ingredientsDB.find(i => i.category === category && valueFn(i) > 0);
     if (!template) return; // aucun ingrédient disponible dans la base pour cette catégorie
-    recipeLines.push({ name: template.name, grams: 0 });
-    idx = recipeLines.length - 1;
+    const leverValue = valueFn(template);
+    if (leverValue <= 0) return;
+    const denom = leverValue - targetPctMid;
+    if (Math.abs(denom) < 1e-9) return;
+    let X = (targetPctMid * totalWeight - totalContrib) / denom;
+    X = Math.max(0, Math.round(X));
+    if (X <= 0) return;
+    recipeLines.push({ name: template.name, grams: X });
     addedIngredients.push(template.name);
+    return;
   }
 
-  const ing = findIngredient(recipeLines[idx].name);
-  if (!ing) return;
-  const leverValue = valueFn(ing);
-  if (leverValue <= 0) return; // impossible d'ajuster avec cet ingrédient
-
-  let weightOther = 0, contribOther = 0;
-  recipeLines.forEach((line, i) => {
-    if (i === idx) return;
-    const g = Math.max(0, line.grams || 0);
-    weightOther += g;
-    const li = findIngredient(line.name);
-    if (li) contribOther += g * valueFn(li);
-  });
-
-  const denom = leverValue - targetPctMid;
+  // Un ou plusieurs ingrédients de la catégorie sont déjà présents: on les
+  // redimensionne TOUS ensemble, à la même échelle, pour atteindre la cible.
+  const weightOther = totalWeight - categoryWeight;
+  const contribOther = totalContrib - categoryContrib;
+  const denom = categoryContrib - targetPctMid * categoryWeight;
   if (Math.abs(denom) < 1e-9) return; // évite une division par zéro
-  let X = (targetPctMid * weightOther - contribOther) / denom;
-  X = Math.max(0, Math.round(X));
+  let k = (targetPctMid * weightOther - contribOther) / denom;
+  k = Math.max(0, k);
 
-  // Ne jamais dépasser la limite de remplissage du pint
-  const maxAllowedX = Math.max(0, MAX_BATCH_WEIGHT - weightOther);
-  X = Math.min(X, maxAllowedX);
-
-  recipeLines[idx].grams = X;
+  categoryIndices.forEach(idx => {
+    recipeLines[idx].grams = Math.max(0, Math.round(recipeLines[idx].grams * k));
+  });
 }
 
 function applyModeAdjustment(modeName) {
@@ -373,30 +372,47 @@ function applyModeAdjustment(modeName) {
   if (!target) return;
 
   const addedIngredients = [];
+  const MAX_ITERATIONS = 6;
 
-  adjustLever({
-    category: 'Sucre',
-    valueFn: ing => ing.carbs * ing.sweetness,
-    targetMin: target.sugar.min,
-    targetMax: target.sugar.max,
-    preferredName: 'Sucre blanc',
-    addedIngredients,
-  });
+  for (let i = 0; i < MAX_ITERATIONS; i++) {
+    adjustLever({
+      category: 'Sucre',
+      valueFn: ing => ing.carbs * ing.sweetness,
+      targetMin: target.sugar.min,
+      targetMax: target.sugar.max,
+      preferredName: 'Sucre blanc',
+      addedIngredients,
+    });
 
-  adjustLever({
-    category: 'Laitier',
-    valueFn: ing => ing.fat,
-    targetMin: target.fat.min,
-    targetMax: target.fat.max,
-    preferredName: 'Crème 30%',
-    addedIngredients,
-  });
+    adjustLever({
+      category: 'Laitier',
+      valueFn: ing => ing.fat,
+      targetMin: target.fat.min,
+      targetMax: target.fat.max,
+      preferredName: 'Crème 30%',
+      addedIngredients,
+    });
+  }
+
+  // Mise à l'échelle finale: remplir le pint à exactement MAX_BATCH_WEIGHT
+  // grammes. Un facteur multiplicatif unique appliqué à tous les ingrédients
+  // ne change aucune proportion — les cibles MG/sucre atteintes ci-dessus
+  // restent donc valables.
+  const currentTotal = recipeLines.reduce((sum, l) => sum + Math.max(0, l.grams || 0), 0);
+  if (currentTotal > 0) {
+    const scale = MAX_BATCH_WEIGHT / currentTotal;
+    recipeLines.forEach(l => {
+      l.grams = Math.max(0, Math.round((l.grams || 0) * scale));
+    });
+  }
 
   saveToStorage(STORAGE_KEYS.recipe, recipeLines);
   renderSimulator();
 
-  if (addedIngredients.length > 0) {
-    alert(`Ajustement automatique (${modeName}) : ${addedIngredients.join(', ')} ajouté(s) à la recette pour atteindre la cible.`);
+  if (currentTotal === 0) {
+    alert("Ajoute au moins un ingrédient avant d'appliquer l'ajustement automatique.");
+  } else if (addedIngredients.length > 0) {
+    alert(`Ajustement automatique (${modeName}) : ${addedIngredients.join(', ')} ajouté(s), recette mise à l'échelle sur ${MAX_BATCH_WEIGHT}g.`);
   }
 }
 
