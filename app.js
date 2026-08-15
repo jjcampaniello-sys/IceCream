@@ -244,17 +244,18 @@ function findIngredient(name) {
 
 function calcIngredientLine(line) {
   const ing = findIngredient(line.name);
-  if (!ing) return { water: 0, fat: 0, sugarEquiv: 0, solids: 0, category: '' };
+  if (!ing) return { water: 0, fat: 0, sugarEquiv: 0, solids: 0, kcal: 0, category: '' };
   const grams = Math.max(0, line.grams || 0);
   const water = ing.water;
   const fat = ing.fat;
   const sugarEquiv = grams * ing.carbs * ing.sweetness;
   const solids = grams * (1 - water);
-  return { water, fat, sugarEquiv, solids, category: ing.category };
+  const kcal = grams * ing.kcal / 100;
+  return { water, fat, sugarEquiv, solids, kcal, category: ing.category };
 }
 
 function calcTotals(lines) {
-  let totalWeight = 0, totalWaterPond = 0, totalFatPond = 0, totalSugar = 0, totalSolids = 0;
+  let totalWeight = 0, totalWaterPond = 0, totalFatPond = 0, totalSugar = 0, totalSolids = 0, totalKcal = 0;
   let fruitG = 0, dairyG = 0, sweetenerG = 0;
 
   for (const line of lines) {
@@ -265,6 +266,7 @@ function calcTotals(lines) {
     totalFatPond += g * c.fat;
     totalSugar += c.sugarEquiv;
     totalSolids += c.solids;
+    totalKcal += c.kcal;
     if (c.category === 'Fruit') fruitG += g;
     if (c.category === 'Laitier') dairyG += g;
     if (c.category === 'Sucre') sweetenerG += g;
@@ -278,6 +280,7 @@ function calcTotals(lines) {
     sugarPct: totalWeight > 0 ? totalSugar / totalWeight : 0,
     solids: totalSolids,
     solidsPct: totalWeight > 0 ? totalSolids / totalWeight : 0,
+    kcal: totalKcal,
     fruitPct: totalWeight > 0 ? fruitG / totalWeight : 0,
     dairyPct: totalWeight > 0 ? dairyG / totalWeight : 0,
     sweetenerPct: totalWeight > 0 ? sweetenerG / totalWeight : 0,
@@ -520,7 +523,6 @@ function renderIngredientRows() {
       <td class="num">${ing ? fmtPct(ing.fat) : '—'}</td>
       <td class="num">${fmt1(c.sugarEquiv)}</td>
       <td class="num">${fmt1(c.solids)}</td>
-      <td class="num">${fmt1(c.kcal)}</td>
       <td>${ing ? ing.category : ''}</td>
       <td><button class="row-delete" data-idx="${idx}" data-action="delete" aria-label="Supprimer">✕</button></td>
     `;
@@ -560,6 +562,7 @@ function renderTotals() {
   document.getElementById('total-fat').textContent = fmtPct(t.fatPct);
   document.getElementById('total-sugar').textContent = fmt1(t.sugarEquiv) + ' g';
   document.getElementById('total-solids').textContent = fmt1(t.solids) + ' g';
+  document.getElementById('total-kcal').textContent = fmt0(t.kcal) + ' kcal';
   return t;
 }
 
